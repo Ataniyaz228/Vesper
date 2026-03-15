@@ -1,26 +1,76 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+/* 
+  @tailwind-patterns: CSS-first Configuration
+  We define our central theme tokens directly in CSS using modern OKLCH color spaces 
+  for perceptual uniformity and vibrant gradients.
+*/
+@theme {
+  /* Dynamic Ambient Variables (Updated via JavaScript/Zustand when a new track plays) */
+  --color-ambient-primary: var(--ambient-primary, oklch(0.25 0.05 250));
+  --color-ambient-secondary: var(--ambient-secondary, oklch(0.15 0.1 280));
+
+  /* Glassmorphism UI Tokens */
+  --color-glass-surface: color-mix(in oklab, var(--color-ambient-primary) 5%, rgba(255, 255, 255, 0.05));
+  --color-glass-border: color-mix(in oklab, var(--color-ambient-secondary) 15%, rgba(255, 255, 255, 0.1));
+  --color-glass-highlight: rgba(255, 255, 255, 0.15);
+
+  /* Custom Animations for our Ambient Background */
+  --animate-ambient-shift: ambientShift 15s ease-in-out infinite alternate;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
+/* 
+  @ui-ux-pro-max: Accessibility & Interactivity Defaults
+*/
+@layer base {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    /* Base dark theme for the premium streaming look */
+    color-scheme: dark;
+    --background: #0A0A0C;
+    --foreground: #FFFFFF;
+  }
+
+  body {
+    background-color: var(--background);
+    color: var(--foreground);
+    /* Prevent rubber-banding on mobile for a native app feel */
+    overscroll-behavior: none;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+/* Base utility layer for our custom ambient animations */
+@layer utilities {
+  @keyframes ambientShift {
+    0% {
+      background-position: 0% 50%;
+    }
+
+    50% {
+      background-position: 100% 50%;
+    }
+
+    100% {
+      background-position: 0% 50%;
+    }
+  }
+
+  /* 
+    Utility class for glassmorphism panels. 
+    Usage: <div className="glass-panel">...</div>
+  */
+  .glass-panel {
+    @apply bg-glass-surface backdrop-blur-2xl border border-glass-border shadow-2xl;
+  }
+
+  /* Hide ALL scrollbars globally — premium feel */
+  * {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+
+  *::-webkit-scrollbar {
+    display: none;
+  }
 }
