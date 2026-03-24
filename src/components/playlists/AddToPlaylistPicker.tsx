@@ -22,8 +22,8 @@ export function AddToPlaylistPicker({ track, open, onClose, anchorRect }: AddToP
     const [creating, setCreating] = useState(false);
 
     useEffect(() => {
-        if (open && user && playlists.length === 0) fetchPlaylists();
-    }, [open, user, playlists.length, fetchPlaylists]);
+        if (open && user) fetchPlaylists();
+    }, [open, user, fetchPlaylists]);
 
     const handleAdd = async (playlistId: string) => {
         setAdded(s => new Set(s).add(playlistId));
@@ -53,7 +53,7 @@ export function AddToPlaylistPicker({ track, open, onClose, anchorRect }: AddToP
             {open && (
                 <>
                     {/* Transparent backdrop */}
-                    <div className="fixed inset-0 z-[80]" onClick={onClose} />
+                    <div className="fixed inset-0 z-[199]" onClick={onClose} />
 
                     {/* Dropdown */}
                     <motion.div
@@ -61,7 +61,7 @@ export function AddToPlaylistPicker({ track, open, onClose, anchorRect }: AddToP
                         animate={{ opacity: 1, scale: 1, y: 0 }}
                         exit={{ opacity: 0, scale: 0.92, y: -6 }}
                         transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
-                        className="z-[81] w-64 rounded-2xl overflow-hidden border border-white/[0.07]"
+                        className="z-[201] w-64 rounded-2xl overflow-hidden border border-white/[0.07]"
                         style={{
                             ...style,
                             background: "rgba(11,11,17,0.98)",
