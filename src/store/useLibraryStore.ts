@@ -126,12 +126,12 @@ export const useLibraryStore = create<LibraryState>()(
                 set({ likedTracks: [], savedPlaylists: [] });
                 // Wipe persisted state entirely
                 if (typeof window !== "undefined") {
-                    localStorage.removeItem("aura-music-library");
+                    localStorage.removeItem("vesper-library");
                 }
             }
         }),
         {
-            name: 'aura-music-library',
+            name: 'vesper-library',
         }
     )
 );

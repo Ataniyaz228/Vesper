@@ -1,384 +1,461 @@
 "use client";
 
-import React, { useState, useRef, useEffect } from "react";
-import { motion, AnimatePresence, useSpring, useMotionValue, useTransform } from "framer-motion";
-import { Play, Plus, ArrowRight, Disc } from "lucide-react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+    Play, Pause, Search, X, Loader2,
+    Music2, Headphones, Zap, Mic2, Radio, Waves, Piano, Globe,
+} from "lucide-react";
 import { useRouter } from "next/navigation";
 import { usePlayerStore } from "@/store/usePlayerStore";
 import { useLibraryStore } from "@/store/useLibraryStore";
 import { AuraTrackImage } from "@/components/ui/AuraTrackImage";
 import { Track } from "@/lib/youtube";
+import { cleanTitle } from "@/lib/utils";
+import { NOISE_URL as NOISE } from "@/lib/constants";
+import { Reveal, SectionHeader, Marquee } from "@/components/home/Shared";
+import { DragShelf } from "@/components/home/DragShelf";
+import { ChartRow } from "@/components/home/ChartRow";
+import { FastAverageColor } from "fast-average-color";
+import { TrackRow } from "@/components/ui/TrackRow";
+import { MiniWave } from "@/components/ui/MiniWave";
 
-// ── TYPES & HELPERS ─────────────────────────────────────────────────────────
+// ─── Types ────────────────────────────────────────────────────────────────────
 interface DiscoverTrack extends Track {
     color1: string;
     color2: string;
     bgGradient: string;
 }
 
-import { cleanTitle } from "@/lib/utils";
-import { NOISE_URL as NOISE } from "@/lib/constants";
-
-// ── COMPONENT: CLUSTER CARD ──────────────────────────────────────────────────
-function ClusterCard({ title, desc, img, onClick }: { title: string, desc: string, img: string, onClick: (e: React.MouseEvent) => void }) {
-    return (
-        <motion.div
-            onClick={onClick}
-            whileHover={{ y: -12, scale: 1.05 }}
-            className="relative w-[300px] h-[450px] flex-shrink-0 rounded-[40px] overflow-hidden group cursor-pointer border border-white/10 shadow-[0_30px_60px_-15px_rgba(0,0,0,0.8)] bg-[#0a0a0c]"
-        >
-            <div className="absolute inset-0 z-0">
-                <img
-                    src={img}
-                    alt={title}
-                    className="absolute inset-0 w-full h-full object-cover grayscale brightness-[0.35] group-hover:grayscale-0 group-hover:brightness-90 transition-all duration-[1.5s] scale-110 group-hover:scale-100 ease-out"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-[#050505] via-transparent to-transparent opacity-80 group-hover:opacity-40 transition-opacity duration-1000" />
-                <div className="absolute inset-0 opacity-[0.04] mix-blend-overlay pointer-events-none" style={{ backgroundImage: NOISE }} />
-                <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-1000 bg-gradient-to-tr from-white/5 via-transparent to-transparent" />
-            </div>
-
-            <div className="absolute bottom-10 left-10 right-10 z-10">
-                <div className="mb-4 overflow-hidden">
-                    <motion.h4 initial={{ y: "100%" }} whileInView={{ y: 0 }} transition={{ duration: 1, ease: [0.16, 1, 0.3, 1] }} className="text-4xl font-black italic uppercase tracking-tighter mb-1 text-white leading-none">
-                        {title}
-                    </motion.h4>
-                </div>
-                <div className="flex items-center gap-3">
-                    <div className="h-[1px] w-8 bg-white/20 group-hover:w-12 transition-all duration-700" />
-                    <p className="text-xs font-black uppercase tracking-[0.4em] text-white/40 group-hover:text-white transition-colors">{desc}</p>
-                </div>
-            </div>
-
-            <div className="absolute top-10 right-10 w-12 h-12 rounded-full border border-white/10 flex items-center justify-center bg-black/20 backdrop-blur-md opacity-0 group-hover:opacity-100 transition-all -translate-x-6 group-hover:translate-x-0 shadow-2xl">
-                <ArrowRight className="w-5 h-5 text-white" />
-            </div>
-
-            <div className="absolute top-8 left-10">
-                <div className="text-[8px] font-mono text-white/20 uppercase tracking-[0.6em] group-hover:text-white/40 transition-colors">
-                    Nodes_07
-                </div>
-            </div>
-        </motion.div>
-    );
-}
-
+// ─── Genres ───────────────────────────────────────────────────────────────────
 const GENRES = [
-    {
-        title: "Phonk",
-        desc: "Neural_Aesthetic",
-        img: "https://i.pinimg.com/736x/c7/45/91/c74591db49cba025f28078684f532d00.jpg",
-        q: "phonk"
-    },
-    {
-        title: "Lo-Fi",
-        desc: "Ghost_City",
-        img: "https://i.pinimg.com/originals/70/eb/85/70eb85d8352f580605b65ca2854f6cc1.jpg",
-        q: "lofi"
-    },
-    {
-        title: "Jazz",
-        desc: "Smoke_Logic",
-        img: "https://i.pinimg.com/originals/8c/4d/94/8c4d94d46ef70e76cc03e380c3ae8f6b.jpg",
-        q: "jazz"
-    },
-    {
-        title: "Techno",
-        desc: "Bento_Pulse",
-        img: "https://i.pinimg.com/736x/68/cd/a6/68cda6ec352dde4918d525afc4baccc3.jpg",
-        q: "techno"
-    },
-    {
-        title: "Ambient",
-        desc: "Horizon_Aesthetic",
-        img: "https://i.pinimg.com/736x/aa/15/67/aa15679bb077c9851f7559986162ef68.jpg",
-        q: "ambient"
-    },
-    {
-        title: "Vocal",
-        desc: "Signal_Aesthetic",
-        img: "https://i.pinimg.com/736x/0d/88/d6/0d88d616e3ae3424ceec54f3d22d6df0.jpg",
-        q: "vocal"
-    },
-    {
-        title: "Classical",
-        desc: "Deep_Heritage",
-        img: "https://i.pinimg.com/originals/49/eb/23/49eb23aaf2366a8024192e0106f54406.jpg",
-        q: "classical"
-    },
-    {
-        title: "Electronic",
-        desc: "Liquid_Aesthetic",
-        img: "https://i.pinimg.com/736x/bf/fa/f9/bffaf9ae8e3ad8e1518af24ee7026501.jpg",
-        q: "electronic"
-    },
+    { id: "phonk",      label: "Phonk",      icon: Zap        },
+    { id: "lofi",       label: "Lo-Fi",       icon: Headphones },
+    { id: "jazz",       label: "Jazz",        icon: Music2     },
+    { id: "techno",     label: "Techno",      icon: Radio      },
+    { id: "ambient",    label: "Ambient",     icon: Waves      },
+    { id: "vocal",      label: "Vocal",       icon: Mic2       },
+    { id: "classical",  label: "Classical",   icon: Piano      },
+    { id: "electronic", label: "Electronic",  icon: Globe      },
 ];
 
-function wrap(min: number, max: number, v: number) {
-    const rangeSize = max - min;
-    return ((((v - min) % rangeSize) + rangeSize) % rangeSize) + min;
+const EASE = [0.16, 1, 0.3, 1] as const;
+
+// ─── Ambient color hook ───────────────────────────────────────────────────────
+type RGB = { r: number; g: number; b: number };
+
+function useDominantColor(imageUrl?: string): RGB {
+    const [color, setColor] = useState<RGB>({ r: 24, g: 24, b: 32 });
+    useEffect(() => {
+        if (!imageUrl) return;
+        const fac = new FastAverageColor();
+        const timeout = setTimeout(() => {
+            fac.getColorAsync(imageUrl, { algorithm: "dominant" })
+                .then((res) => {
+                    const [r, g, b] = res.value;
+                    const brightness = (r * 299 + g * 587 + b * 114) / 1000;
+                    if (brightness < 30) {
+                        setColor({ r: Math.min(255, r + 50), g: Math.min(255, g + 50), b: Math.min(255, b + 50) });
+                    } else {
+                        setColor({ r, g, b });
+                    }
+                })
+                .catch(() => {});
+        }, 300);
+        return () => clearTimeout(timeout);
+    }, [imageUrl]);
+    return color;
 }
 
-// ── FREQUENCY NODES: TRULY SEAMLESS INFINITE LOOP ───────────────────────────
-function FrequencyNodes({ onNavigate }: { onNavigate: (e: React.MouseEvent, q: string) => void }) {
-    const containerRef = useRef<HTMLDivElement>(null);
-    const contentRef = useRef<HTMLDivElement>(null);
-    const items = [...GENRES, ...GENRES, ...GENRES];
+// ─── Cinematic Hero ───────────────────────────────────────────────────────────
+function CinematicHero({
+    track,
+    allTracks,
+    onSearch,
+}: {
+    track: DiscoverTrack;
+    allTracks: Track[];
+    onSearch: (q: string) => void;
+}) {
+    const { playTrack, currentTrack, isPlaying, isLoading } = usePlayerStore();
+    const isActive = currentTrack?.id === track.id;
+    const isCurrentlyPlaying = isActive && isPlaying;
 
-    const rawX = useMotionValue(0);
-    const smoothX = useSpring(rawX, { stiffness: 45, damping: 25, mass: 1 });
-    const [setWidth, setSetWidth] = useState(0);
+    const [searchOpen, setSearchOpen] = useState(false);
+    const [query, setQuery] = useState("");
+    const [results, setResults] = useState<Track[]>([]);
+    const [isSearching, setIsSearching] = useState(false);
+    const inputRef = useRef<HTMLInputElement>(null);
+    const debounceRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
-    useEffect(() => {
-        const update = () => {
-            if (contentRef.current) {
-                const total = contentRef.current.scrollWidth;
-                const sw = total / 3;
-                setSetWidth(sw);
-                rawX.set(-sw);
-            }
-        };
-        update();
-        window.addEventListener("resize", update);
-        return () => window.removeEventListener("resize", update);
-    }, [rawX]);
+    const rgb = useDominantColor(track.albumImageUrl);
+    const centerGlow = `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.45)`;
+    const edgeGlow   = `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.12)`;
 
-    const renderX = useTransform(smoothX, (v) => {
-        if (setWidth === 0) return v;
-        return wrap(-setWidth * 2, -setWidth, v);
-    });
+    const doSearch = useCallback(async (q: string) => {
+        if (!q.trim()) { setResults([]); return; }
+        setIsSearching(true);
+        try {
+            const res = await fetch(`/api/search?q=${encodeURIComponent(q)}`);
+            setResults(await res.json());
+        } catch { setResults([]); }
+        finally { setIsSearching(false); }
+    }, []);
 
-    useEffect(() => {
-        const handleWheel = (e: WheelEvent) => {
-            if (Math.abs(e.deltaY) > Math.abs(e.deltaX)) {
-                e.preventDefault();
-                rawX.set(rawX.get() - e.deltaY * 1.2);
-            }
-        };
+    const handleChange = (val: string) => {
+        setQuery(val);
+        clearTimeout(debounceRef.current);
+        debounceRef.current = setTimeout(() => doSearch(val), 420);
+    };
 
-        const el = containerRef.current;
-        if (!el) return;
-        el.addEventListener("wheel", handleWheel, { passive: false });
-        return () => el.removeEventListener("wheel", handleWheel);
-    }, [rawX]);
+    const openSearch = () => {
+        setSearchOpen(true);
+        setTimeout(() => inputRef.current?.focus(), 40);
+    };
 
-    return (
-        <div className="relative pt-32 pb-64 border-t border-white/5 overflow-hidden">
-            <div className="px-6 lg:px-[10vw] mb-20 text-center md:text-left">
-                <motion.p initial={{ opacity: 0, x: -20 }} whileInView={{ opacity: 1, x: 0 }} className="text-xs font-black tracking-[1em] text-white/10 uppercase mb-6">
-                    Continuity Protocol
-                </motion.p>
-                <div className="overflow-hidden">
-                    <motion.h3
-                        initial={{ y: "100%" }}
-                        whileInView={{ y: 0 }}
-                        transition={{ duration: 1.2, ease: [0.16, 1, 0.3, 1] }}
-                        className="text-6xl lg:text-9xl font-black italic uppercase tracking-tighter leading-none"
-                    >
-                        Freq<span className="text-transparent" style={{ WebkitTextStroke: "1px rgba(255,255,255,0.1)" }}>uenc</span>y
-                    </motion.h3>
-                </div>
-            </div>
-
-            <div ref={containerRef} className="overflow-hidden w-full px-8 cursor-grab active:cursor-grabbing">
-                <motion.div
-                    ref={contentRef}
-                    drag="x"
-                    onDrag={(e, info) => {
-                        rawX.set(rawX.get() + info.delta.x);
-                    }}
-                    style={{ x: renderX }}
-                    className="flex gap-14 w-max pb-10 px-[10vw]"
-                >
-                    {items.map((g, i) => (
-                        <ClusterCard key={i} title={g.title} desc={g.desc} img={g.img} onClick={(e) => onNavigate(e, g.q)} />
-                    ))}
-                </motion.div>
-            </div>
-        </div>
-    );
-}
-
-// ── EXHIBITION MODULE ───────────────────────────────────────────────────────
-function ExhibitionTrack({ track, index, allTracks }: { track: DiscoverTrack, index: number, allTracks: Track[] }) {
-    const { playTrack, currentTrack, isPlaying } = usePlayerStore();
-    const { toggleLikeTrack, isTrackLiked } = useLibraryStore();
-    const isActive = currentTrack?.id === track.id && isPlaying;
-    const isSaved = isTrackLiked(track.id);
+    const closeSearch = () => {
+        setSearchOpen(false);
+        setQuery("");
+        setResults([]);
+    };
 
     return (
-        <motion.div
-            initial={{ opacity: 0, y: 100 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, margin: "-100px" }}
-            transition={{ duration: 1.2, ease: [0.16, 1, 0.3, 1] }}
-            className={`relative w-full flex flex-col ${index % 2 === 0 ? "md:flex-row" : "md:flex-row-reverse"} gap-12 md:gap-24 mb-64 items-center`}
-            style={{ position: "relative", overflow: "visible" }}
+        <motion.section
+            animate={{ height: searchOpen ? 180 : "clamp(380px, 58vh, 580px)" }}
+            transition={{ duration: 0.72, ease: EASE }}
+            className="relative w-full flex-shrink-0 overflow-hidden"
+            style={{ borderBottomLeftRadius: 36, borderBottomRightRadius: 36 }}
         >
-            <div
-                className="absolute -right-4 top-0 text-[clamp(60px,8vw,120px)] font-black text-white/[0.06] select-none pointer-events-none leading-none"
-                style={{ zIndex: 0 }}
-            >
-                {track.title.split(' ')[1] || track.title.substring(0, 2).toUpperCase()}
-            </div>
-
-            <div className="relative z-10 w-full md:w-1/2">
+            {/* Album art full-bleed background */}
+            <AnimatePresence mode="popLayout">
                 <motion.div
-                    whileHover={{ scale: 1.02 }}
-                    transition={{ duration: 0.8 }}
-                    className="relative group aspect-square rounded-[40px] overflow-hidden bg-[#0a0a0c] border border-white/10 shadow-[0_40px_100px_-20px_rgba(0,0,0,0.8)]"
+                    key={track.id}
+                    initial={{ opacity: 0, scale: 1.12 }}
+                    animate={{ opacity: 1, scale: 1.06 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ opacity: { duration: 1.6 }, scale: { duration: 20, ease: "linear" } }}
+                    className="absolute inset-0 w-full h-full"
                 >
                     <AuraTrackImage
                         trackId={track.id}
                         fallbackUrl={track.albumImageUrl}
-                        className="w-full h-full object-cover saturate-[1.1] transition-transform duration-1000 group-hover:scale-110"
+                        className="w-full h-full object-cover"
                         alt={track.title}
                     />
-                    <div
-                        onClick={() => playTrack(track, allTracks)}
-                        className="absolute inset-0 flex items-center justify-center bg-black/40 backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-all duration-500 cursor-pointer"
-                    >
-                        <div className="w-24 h-24 rounded-full bg-white text-black flex items-center justify-center shadow-2xl scale-75 group-hover:scale-100 transition-transform duration-500">
-                            <Play className="w-8 h-8 fill-current ml-1" />
-                        </div>
-                    </div>
                 </motion.div>
+            </AnimatePresence>
+
+            {/* Ambient radial glow from dominant color */}
+            <motion.div
+                className="absolute inset-0 pointer-events-none mix-blend-screen"
+                animate={{ opacity: [0.5, 0.65, 0.5] }}
+                transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
+                style={{
+                    background: `radial-gradient(ellipse at 50% 80%, ${centerGlow} 0%, ${edgeGlow} 50%, transparent 80%)`,
+                }}
+            />
+
+            {/* Dark gradients for readability */}
+            <div className="absolute inset-0" style={{ background: "radial-gradient(ellipse at center, transparent 5%, rgba(0,0,0,0.55) 100%)" }} />
+            <div className="absolute inset-0" style={{ background: "linear-gradient(to bottom, rgba(0,0,0,0.52) 0%, transparent 35%, rgba(0,0,0,0.94) 100%)" }} />
+            <div className="absolute inset-0 opacity-[0.06] pointer-events-none mix-blend-overlay" style={{ backgroundImage: NOISE }} />
+
+            {/* DISCOVER watermark */}
+            <div className="absolute inset-0 flex items-center justify-center pointer-events-none mix-blend-overlay select-none overflow-hidden">
+                <motion.h1
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 0.04 }}
+                    transition={{ duration: 2, delay: 0.5 }}
+                    className="text-[22vw] font-black uppercase tracking-[-0.05em] leading-none text-white whitespace-nowrap"
+                >
+                    DISCOVER
+                </motion.h1>
             </div>
 
-            <div className="relative z-20 w-full md:w-1/2 flex flex-col gap-8 text-center md:text-left">
-                <div className="space-y-4">
-                    <motion.div initial={{ width: 0 }} whileInView={{ width: 60 }} transition={{ duration: 1, delay: 0.5 }} className="h-1 bg-white/20 rounded-full mx-auto md:mx-0" />
-                    <h2 className="text-5xl lg:text-7xl xl:text-8xl font-black italic uppercase tracking-tighter leading-[0.85] text-white">
-                        {cleanTitle(track.title).split(' ').map((word, i) => (
-                            <span key={i} className={i % 2 !== 0 ? "text-transparent stroke-text" : ""}>{word} </span>
-                        ))}
-                    </h2>
-                    <div className="flex items-baseline justify-center md:justify-start gap-4 mt-2">
-                        <span className="text-xl lg:text-3xl font-serif text-white/40 italic">{track.artist}</span>
-                    </div>
-                </div>
+            {/* Top bar */}
+            <div className="absolute top-0 left-0 right-0 z-20 flex items-start justify-between px-4 sm:px-6 lg:px-8 pt-7">
+                <AnimatePresence>
+                    {!searchOpen && (
+                        <motion.span
+                            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                            className="text-xs tracking-[0.48em] text-white/22 uppercase font-semibold"
+                        >
+                            Signal · 2.4M+ tracks
+                        </motion.span>
+                    )}
+                </AnimatePresence>
 
-                <div className="flex flex-wrap gap-4 items-center justify-center md:justify-start mt-4">
-                    <button
-                        onClick={() => playTrack(track, allTracks)}
-                        className="flex items-center gap-4 px-10 py-5 bg-white text-black rounded-full font-black uppercase tracking-widest text-xs hover:scale-105 active:scale-95 transition-all shadow-xl"
-                    >
-                        {isActive ? "Resonating" : "Listen Vibration"}
-                        <Disc className={`w-4 h-4 ${isActive ? "animate-spin" : ""}`} />
-                    </button>
-                    <button
-                        onClick={() => toggleLikeTrack(track)}
-                        className={`p-5 rounded-full border transition-all ${isSaved ? "bg-white/10 border-white/20 text-white" : "border-white/5 text-white/40 hover:border-white/20 hover:text-white"}`}
-                    >
-                        <Plus className={`w-5 h-5 transition-transform duration-500 ${isSaved ? "rotate-45" : ""}`} />
-                    </button>
+                {/* Search toggle */}
+                <div className="flex items-center gap-3 ml-auto">
+                    <AnimatePresence mode="wait">
+                        {searchOpen ? (
+                            <motion.form
+                                key="form"
+                                initial={{ opacity: 0, scaleX: 0.5, originX: 1 }}
+                                animate={{ opacity: 1, scaleX: 1 }}
+                                exit={{ opacity: 0, scaleX: 0.5 }}
+                                transition={{ duration: 0.3, ease: EASE }}
+                                onSubmit={(e) => { e.preventDefault(); doSearch(query); }}
+                                className="flex items-center gap-2.5 rounded-full px-4 py-2.5 border border-white/10 backdrop-blur-2xl"
+                                style={{ background: "rgba(255,255,255,0.07)", width: "clamp(200px,28vw,380px)" }}
+                            >
+                                <Search className="w-3.5 h-3.5 text-white/30 flex-shrink-0" />
+                                <input
+                                    ref={inputRef}
+                                    value={query}
+                                    onChange={(e) => handleChange(e.target.value)}
+                                    placeholder="Songs, artists, genres…"
+                                    className="flex-1 bg-transparent text-sm text-white placeholder:text-white/22 focus:outline-none min-w-0"
+                                />
+                                <button type="button" onClick={closeSearch} className="text-white/22 hover:text-white/60 transition-colors flex-shrink-0">
+                                    <X className="w-3.5 h-3.5" />
+                                </button>
+                            </motion.form>
+                        ) : (
+                            <motion.button
+                                key="icon"
+                                initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                                onClick={openSearch}
+                                className="w-9 h-9 rounded-full border border-white/10 flex items-center justify-center hover:bg-white/10 transition-all backdrop-blur-xl"
+                                style={{ background: "rgba(255,255,255,0.06)" }}
+                            >
+                                <Search className="w-4 h-4 text-white/55" />
+                            </motion.button>
+                        )}
+                    </AnimatePresence>
                 </div>
             </div>
 
-            <style jsx>{`
-                .stroke-text {
-                    -webkit-text-stroke: 1px rgba(255,255,255,0.2);
-                }
-            `}</style>
-        </motion.div>
-    );
-}
-
-// ── MAIN VIEW ───────────────────────────────────────────────────────────────
-export function DiscoverClientView({ initialTracks }: { initialTracks: DiscoverTrack[] }) {
-    const router = useRouter();
-    const [mounted, setMounted] = useState(false);
-    const [isNavigating, setIsNavigating] = useState(false);
-    const [portalPos, setPortalPos] = useState({ x: 0, y: 0 });
-
-    const mouseX = useMotionValue(0);
-    const mouseY = useMotionValue(0);
-    const smoothX = useSpring(mouseX, { stiffness: 50, damping: 20 });
-    const smoothY = useSpring(mouseY, { stiffness: 50, damping: 20 });
-
-    const titleRotateX = useTransform(smoothY, [-0.5, 0.5], ["10deg", "-10deg"]);
-    const titleRotateY = useTransform(smoothX, [-0.5, 0.5], ["-10deg", "10deg"]);
-
-    useEffect(() => {
-        // eslint-disable-next-line react-hooks/set-state-in-effect
-        setMounted(true);
-    }, []);
-
-    useEffect(() => {
-        const handleMove = (e: MouseEvent) => {
-            mouseX.set(e.clientX / window.innerWidth - 0.5);
-            mouseY.set(e.clientY / window.innerHeight - 0.5);
-        };
-        window.addEventListener("mousemove", handleMove);
-        return () => window.removeEventListener("mousemove", handleMove);
-    }, [mouseX, mouseY]);
-
-    const handleNavigate = (e: React.MouseEvent, query: string) => {
-        setPortalPos({ x: e.clientX, y: e.clientY });
-        setIsNavigating(true);
-        setTimeout(() => router.push(`/?q=${query}`), 800);
-    };
-
-    if (!mounted) return null;
-
-    return (
-        <div className="relative w-full bg-[#060608] text-white selection:bg-white/10 overflow-x-hidden no-scrollbar">
+            {/* Hero content — shown when search is closed */}
             <AnimatePresence>
-                {isNavigating && (
+                {!searchOpen && (
                     <motion.div
-                        initial={{ clipPath: `circle(0% at ${portalPos.x}px ${portalPos.y}px)` }}
-                        animate={{ clipPath: `circle(150% at ${portalPos.x}px ${portalPos.y}px)` }}
-                        transition={{ duration: 0.8, ease: [0.76, 0, 0.24, 1] }}
-                        className="fixed inset-0 z-[100] bg-black border border-white/5 pointer-events-none"
-                    />
+                        initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 10 }}
+                        transition={{ duration: 0.5, ease: EASE }}
+                        className="absolute bottom-0 left-0 right-0 z-10 px-4 sm:px-6 lg:px-8 pb-7 sm:pb-9 flex items-end justify-between gap-4 sm:gap-8"
+                    >
+                        <div className="flex flex-col gap-2 min-w-0 flex-1">
+                            <div className="flex items-center gap-2">
+                                <motion.div
+                                    className="w-1.5 h-1.5 rounded-full bg-white/40"
+                                    animate={{ opacity: [1, 0.3, 1] }}
+                                    transition={{ duration: 2, repeat: Infinity }}
+                                />
+                                <span className="text-xs tracking-[0.46em] text-white/30 uppercase font-semibold">Featured</span>
+                            </div>
+                            <h1
+                                className="font-black tracking-[-0.04em] leading-[1.03] text-white"
+                                style={{ fontSize: "clamp(22px, 3.8vw, 56px)" }}
+                            >
+                                {cleanTitle(track.title)}
+                            </h1>
+                            <p className="text-white/30 text-xs max-w-[280px] leading-relaxed truncate">
+                                {track.artist}
+                            </p>
+                        </div>
+
+                        <button
+                            onClick={() => playTrack(track, allTracks)}
+                            className="flex items-center gap-2 text-xs font-bold px-6 py-3.5 rounded-full flex-shrink-0 bg-white text-black hover:scale-105 active:scale-95 transition-all"
+                            style={{ boxShadow: "0 0 40px rgba(255,255,255,0.2)" }}
+                        >
+                            {isCurrentlyPlaying && !isLoading
+                                ? <Pause className="w-3 h-3 fill-current" />
+                                : <Play className="w-3 h-3 fill-current" />
+                            }
+                            {isCurrentlyPlaying ? "Playing" : "Listen"}
+                        </button>
+                    </motion.div>
                 )}
             </AnimatePresence>
 
-            {!initialTracks || initialTracks.length === 0 ? (
-                <div className="h-screen w-full flex items-center justify-center text-white/50 text-xs font-black uppercase tracking-widest bg-[#060608]">
-                    Awaiting Transmission...
-                </div>
-            ) : (
-                <>
-                    <div className="fixed inset-0 pointer-events-none z-0">
-                        <div className="absolute inset-0 opacity-[0.05] mix-blend-screen" style={{ backgroundImage: NOISE }} />
-                    </div>
-
-                    <section className="relative h-screen flex flex-col justify-center px-6 lg:px-12 perspective-[1500px]">
-                        <div className="relative z-10 pointer-events-none">
-                            <motion.p initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="text-xs font-black tracking-[0.8em] text-white/20 uppercase mb-8">
-                                Acoustic Archive
-                            </motion.p>
-                            <motion.h1
-                                style={{ rotateX: titleRotateX, rotateY: titleRotateY, transformStyle: "preserve-3d" }}
-                                initial={{ opacity: 0, z: -200 }} animate={{ opacity: 1, z: 0 }} transition={{ delay: 0.2, duration: 1.5 }}
-                                className="text-[clamp(48px,15vw,120px)] md:text-[clamp(80px,16vw,200px)] font-black leading-[0.75] italic uppercase tracking-tighter"
+            {/* Search results overlay */}
+            <AnimatePresence>
+                {searchOpen && (
+                    <motion.section
+                        initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 16 }}
+                        transition={{ duration: 0.48, ease: EASE }}
+                        className="absolute bottom-0 left-0 right-0 z-20 px-4 sm:px-6 lg:px-8 pb-6 pt-2 max-h-[50vh] overflow-y-auto"
+                    >
+                        {isSearching ? (
+                            <div className="flex justify-center py-10">
+                                <Loader2 className="w-5 h-5 animate-spin text-white/25" />
+                            </div>
+                        ) : results.length > 0 ? (
+                            <div
+                                className="flex flex-col rounded-[22px] overflow-hidden border border-white/[0.04] backdrop-blur-3xl"
+                                style={{ background: "rgba(255,255,255,0.024)" }}
                             >
-                                Exp<span className="text-transparent" style={{ WebkitTextStroke: "1px rgba(255,255,255,0.2)" }}>lo</span>re
-                            </motion.h1>
-                        </div>
-                        <div className="absolute bottom-20 right-12 text-right">
-                            <p className="text-xs font-serif italic text-white/40 max-w-sm mb-6 leading-relaxed">
-                                A curated dimension where sound meets architectural space.
-                            </p>
-                            <motion.div animate={{ y: [0, 15, 0] }} transition={{ duration: 2, repeat: Infinity }} className="inline-block opacity-20">
-                                <ArrowRight className="w-16 h-16 text-white rotate-90" />
-                            </motion.div>
-                        </div>
-                    </section>
+                                {results.map((t, i) => (
+                                    <TrackRow
+                                        key={t.id}
+                                        index={i + 1}
+                                        track={t}
+                                        title={t.title}
+                                        artist={t.artist}
+                                        duration="--:--"
+                                        isActive={currentTrack?.id === t.id}
+                                        onClick={() => playTrack(t, results.slice(i))}
+                                    />
+                                ))}
+                            </div>
+                        ) : query.trim() ? (
+                            <div className="flex justify-center py-10 text-white/18 text-xs tracking-widest uppercase">Nothing found</div>
+                        ) : (
+                            <div className="flex justify-center py-10 text-white/10 text-xs tracking-widest uppercase">Start typing…</div>
+                        )}
+                    </motion.section>
+                )}
+            </AnimatePresence>
+        </motion.section>
+    );
+}
 
-                    <section className="container mx-auto px-6 lg:px-12 relative z-10">
-                        <div className="mb-40 flex items-center justify-between border-b border-white/5 pb-12">
-                            <h2 className="text-2xl font-black uppercase tracking-[0.5em] text-white/40 italic">Latest Entries</h2>
-                        </div>
-                        {initialTracks.map((track, i) => (
-                            <ExhibitionTrack key={track.id} track={track} index={i} allTracks={initialTracks} />
-                        ))}
-                    </section>
+// ─── Genre Shelf Card ─────────────────────────────────────────────────────────
+function GenreCard({
+    genre,
+    onClick,
+    index,
+}: {
+    genre: typeof GENRES[number];
+    onClick: () => void;
+    index: number;
+}) {
+    const Icon = genre.icon;
+    return (
+        <motion.button
+            onClick={onClick}
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: "-30px" }}
+            transition={{ duration: 0.55, delay: index * 0.06, ease: EASE }}
+            whileHover={{ y: -4, scale: 1.03 }}
+            whileTap={{ scale: 0.96 }}
+            className="flex flex-col items-start gap-4 p-5 rounded-2xl border border-white/[0.06] bg-white/[0.025] hover:bg-white/[0.05] hover:border-white/[0.1] transition-all duration-300 flex-shrink-0 cursor-pointer group"
+            style={{
+                width: "clamp(120px, 18vw, 160px)",
+                boxShadow: "0 8px 32px rgba(0,0,0,0.3)",
+            }}
+        >
+            <div className="w-9 h-9 rounded-xl flex items-center justify-center bg-white/[0.06] border border-white/[0.06] group-hover:border-white/[0.12] transition-colors">
+                <Icon className="w-4 h-4 text-white/50 group-hover:text-white/80 transition-colors" />
+            </div>
+            <span className="text-sm font-bold text-white/55 group-hover:text-white/90 transition-colors tracking-tight">
+                {genre.label}
+            </span>
+        </motion.button>
+    );
+}
 
-                    <FrequencyNodes onNavigate={handleNavigate} />
-                </>
-            )}
+// ─── Empty State ──────────────────────────────────────────────────────────────
+function EmptyState() {
+    return (
+        <div className="flex flex-col items-center justify-center h-[60vh] gap-4 text-center">
+            <div className="w-12 h-12 rounded-2xl bg-white/[0.03] border border-white/[0.05] flex items-center justify-center">
+                <Music2 className="w-5 h-5 text-white/15" />
+            </div>
+            <p className="text-sm text-white/25 font-semibold tracking-wide">Awaiting signal…</p>
+        </div>
+    );
+}
+
+// ─── Main View ────────────────────────────────────────────────────────────────
+export function DiscoverClientView({ initialTracks }: { initialTracks: DiscoverTrack[] }) {
+    const router = useRouter();
+    const { playTrack, currentTrack } = usePlayerStore();
+    const [mounted, setMounted] = useState(false);
+
+    useEffect(() => { setMounted(true); }, []);
+
+    const handleNavigate = useCallback((q: string) => {
+        router.push(`/?q=${q}`);
+    }, [router]);
+
+    if (!mounted) return null;
+
+    if (!initialTracks || initialTracks.length === 0) {
+        return (
+            <div className="w-full min-h-screen bg-[#080809] text-white">
+                <EmptyState />
+            </div>
+        );
+    }
+
+    const featuredTrack = initialTracks[0];
+    const trendingTracks = initialTracks.slice(1);
+
+    // Gather marquee genre/artist labels
+    const marqueeItems = [...new Set(initialTracks.map(t => t.artist.split(",")[0].trim()))].slice(0, 8);
+
+    return (
+        <div className="relative w-full bg-[#080809] text-white min-h-screen flex flex-col">
+            {/* Global noise */}
+            <div
+                className="fixed inset-0 opacity-[0.025] mix-blend-overlay pointer-events-none z-0"
+                style={{ backgroundImage: NOISE }}
+            />
+
+            <div className="relative z-10 flex flex-col pb-44">
+
+                {/* ── 1. Cinematic Hero ── */}
+                <CinematicHero
+                    track={featuredTrack}
+                    allTracks={initialTracks}
+                    onSearch={handleNavigate}
+                />
+
+                {/* ── 2. Marquee ── */}
+                <Reveal>
+                    <div className="pt-10">
+                        <Marquee items={marqueeItems.length > 0 ? marqueeItems : ["Phonk", "Lo-Fi", "Jazz", "Ambient", "Techno", "Classical", "Electronic", "Vocal"]} />
+                    </div>
+                </Reveal>
+
+                {/* ── 3. Genres drag shelf ── */}
+                <Reveal delay={0.05}>
+                    <div className="pt-14">
+                        <SectionHeader eyebrow="Browse" title="Genres" />
+                        <DragShelf>
+                            {GENRES.map((g, i) => (
+                                <GenreCard
+                                    key={g.id}
+                                    genre={g}
+                                    index={i}
+                                    onClick={() => handleNavigate(g.id)}
+                                />
+                            ))}
+                        </DragShelf>
+                    </div>
+                </Reveal>
+
+                {/* ── 4. Trending chart rows ── */}
+                <Reveal delay={0.04}>
+                    <div className="pt-16">
+                        <SectionHeader eyebrow="Signal" title="Trending Right Now" />
+                        <div
+                            className="mx-4 sm:mx-6 lg:mx-8 rounded-[22px] overflow-hidden border border-white/[0.04] backdrop-blur-2xl"
+                            style={{ background: "rgba(255,255,255,0.022)" }}
+                        >
+                            {trendingTracks.length === 0 ? (
+                                <div className="flex justify-center py-10">
+                                    <Loader2 className="w-5 h-5 animate-spin text-white/20" />
+                                </div>
+                            ) : (
+                                trendingTracks.map((t, i) => (
+                                    <ChartRow
+                                        key={t.id}
+                                        track={t}
+                                        index={i}
+                                        active={currentTrack?.id === t.id}
+                                        onClick={() => playTrack(t, trendingTracks)}
+                                    />
+                                ))
+                            )}
+                        </div>
+                    </div>
+                </Reveal>
+
+            </div>
         </div>
     );
 }

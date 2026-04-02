@@ -35,7 +35,7 @@ const VinylRecord = ({ activeTrack }: { activeTrack: { coverUrl?: string, color2
             <group ref={groupRef}>
                 {/* 1. Hyper-Realistic Glossy Vinyl Base */}
                 <mesh castShadow receiveShadow>
-                    <cylinderGeometry args={[2.8, 2.8, 0.04, 128]} />
+                    <cylinderGeometry args={[2.8, 2.8, 0.04, 64]} />
                     <meshPhysicalMaterial
                         color="#050505"
                         roughness={0.2}
@@ -49,7 +49,7 @@ const VinylRecord = ({ activeTrack }: { activeTrack: { coverUrl?: string, color2
                 {/* 2. Elegant Track Separators (Grooves) */}
                 {[1.4, 1.8, 2.3, 2.6].map((radius, i) => (
                     <mesh key={`groove-${i}`} position={[0, 0.021, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-                        <torusGeometry args={[radius, 0.004, 16, 128]} />
+                        <torusGeometry args={[radius, 0.004, 8, 48]} />
                         <meshStandardMaterial color="#000000" roughness={0.4} metalness={0.2} />
                     </mesh>
                 ))}
@@ -69,7 +69,7 @@ const VinylRecord = ({ activeTrack }: { activeTrack: { coverUrl?: string, color2
 
             {/* 5. Turntable Platter (Adds weight and grounds the scene) */}
             <mesh position={[0, -0.15, 0]}>
-                <cylinderGeometry args={[2.9, 2.9, 0.1, 128]} />
+                <cylinderGeometry args={[2.9, 2.9, 0.1, 64]} />
                 <meshStandardMaterial color="#111111" roughness={0.6} metalness={0.5} />
             </mesh>
 
@@ -84,7 +84,7 @@ const VinylRecord = ({ activeTrack }: { activeTrack: { coverUrl?: string, color2
 
 export default function ThreeDSceneComponent({ activeTrack }: { activeTrack?: { coverUrl?: string, color2?: string } }) {
     return (
-        <Canvas camera={{ position: [0, 0, 10], fov: 35 }} dpr={[1, 2]}>
+        <Canvas camera={{ position: [0, 0, 10], fov: 35 }} dpr={[1, 1.25]}>
             <Environment preset="studio" />
             <ambientLight intensity={0.4} />
 

@@ -6,89 +6,131 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Eye, EyeOff } from "lucide-react";
 import { useAuthStore } from "@/store/useAuthStore";
-import { NOISE_URL } from "@/lib/constants";
+import {
+    AuthBackground,
+    AuthCard,
+    GlassInput,
+    AuthSubmitButton,
+    containerVariants,
+    itemVariants,
+} from "@/components/auth/AuthShared";
 
-// ── Depth Overlay & Cinematic Background ──────────────────────────────────────
-function CinematicBackground() {
+// ─────────────────────────────────────────────────────────────────────────────
+// Shared Logo mark
+// ─────────────────────────────────────────────────────────────────────────────
+function VesperLogo({ size = "md" }: { size?: "sm" | "md" }) {
+    const iconSize = size === "sm" ? "w-6 h-6" : "w-7 h-7";
+    const textSize = size === "sm" ? "text-[14px]" : "text-[15px]";
     return (
-        <>
-            <div className="fixed inset-0 pointer-events-none select-none z-0 overflow-hidden bg-[#050505]">
-                {/* Giant ambient glow */}
-                <motion.div
-                    className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[90vw] h-[90vw] max-w-[1200px] max-h-[1200px] rounded-full"
-                    style={{
-                        background: "radial-gradient(circle, rgba(99, 102, 241, 0.08) 0%, rgba(159, 18, 57, 0.03) 40%, transparent 70%)",
-                        filter: "blur(120px)",
-                    }}
-                    animate={{ scale: [1, 1.08, 1], opacity: [0.6, 1, 0.6] }}
-                    transition={{ duration: 16, repeat: Infinity, ease: "easeInOut" }}
-                />
-                {/* Giant VESPER text */}
-                <div className="absolute inset-0 flex items-center justify-center overflow-hidden">
-                    <span className="text-[clamp(12rem,28vw,30rem)] font-black leading-none tracking-tighter text-white opacity-[0.02] select-none">
-                        VESPER
-                    </span>
-                </div>
-                {/* Noise overlay */}
-                <div
-                    className="absolute inset-0 mix-blend-overlay opacity-[0.04]"
-                    style={{ backgroundImage: NOISE_URL }}
-                />
+        <div className="flex items-center gap-2.5">
+            <div className={`${iconSize} rounded-lg bg-white/90 flex items-center justify-center flex-shrink-0`}>
+                <svg className="w-3.5 h-3.5 text-black" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z" />
+                </svg>
             </div>
-
-            {/* Foreground Drifting Crystals / Energy Shards (Depth of Field) */}
-            <div className="fixed inset-0 pointer-events-none select-none z-20 overflow-hidden">
-                <motion.div
-                    className="absolute -bottom-32 -left-32 w-96 h-96 rounded-full"
-                    style={{
-                        background: "radial-gradient(ellipse, rgba(139, 92, 246, 0.15) 0%, transparent 60%)",
-                        filter: "blur(40px)",
-                    }}
-                    animate={{ x: [0, 40, 0], y: [0, -30, 0], rotate: [0, 15, 0] }}
-                    transition={{ duration: 20, repeat: Infinity, ease: "easeInOut" }}
-                />
-                <motion.div
-                    className="absolute -top-40 -right-20 w-[30rem] h-[30rem] rounded-full"
-                    style={{
-                        background: "radial-gradient(ellipse, rgba(79, 70, 229, 0.12) 0%, transparent 60%)",
-                        filter: "blur(60px)",
-                    }}
-                    animate={{ x: [0, -50, 0], y: [0, 40, 0], rotate: [0, -10, 0] }}
-                    transition={{ duration: 25, repeat: Infinity, ease: "easeInOut" }}
-                />
-            </div>
-        </>
+            <span className={`text-white font-semibold ${textSize} tracking-tight`}>Vesper</span>
+        </div>
     );
 }
 
-// ── Premium Glass Input Field ──────────────────────────────────────────────────
-interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
-    label: string;
-    suffix?: React.ReactNode;
+// ─────────────────────────────────────────────────────────────────────────────
+// Left bento panel — desktop only
+// ─────────────────────────────────────────────────────────────────────────────
+function BentoImageBlock({ src }: { src: string }) {
+    return (
+        <div className="relative overflow-hidden rounded-2xl border border-white/[0.07] group">
+            <img
+                src={src}
+                alt=""
+                className="absolute inset-0 w-full h-full object-cover grayscale opacity-50 group-hover:grayscale-0 group-hover:opacity-80 group-hover:scale-105 transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)]"
+                draggable={false}
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-[#080809]/60 to-transparent" />
+        </div>
+    );
 }
 
-function GlassInput({ label, suffix, ...props }: InputProps) {
+function BentoStatBlock() {
     return (
-        <div className="flex flex-col gap-2 w-full text-left">
-            <label className="text-xs font-semibold text-white/50 uppercase tracking-widest pl-1">
-                {label}
-            </label>
+        <div className="relative rounded-2xl border border-white/[0.07] bg-white/[0.03] p-5 flex flex-col justify-between overflow-hidden group hover:bg-white/[0.05] transition-colors duration-300">
+            <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500"
+                style={{ background: "radial-gradient(circle at 50% 0%, rgba(99,102,241,0.08) 0%, transparent 70%)" }} />
             <div className="relative">
-                <input
-                    {...props}
-                    className={`w-full bg-white/[0.03] text-white text-sm placeholder:text-white/20 px-4 py-3.5 rounded-2xl outline-none transition-all duration-300 border border-white/10 focus:border-white/30 focus:bg-white/[0.06] ${suffix ? 'pr-12' : ''}`}
-                />
-                {suffix && (
-                    <div className="absolute right-4 top-1/2 -translate-y-1/2 text-white/30 hover:text-white/70 transition-colors flex items-center justify-center">
-                        {suffix}
-                    </div>
-                )}
+                <div className="text-[10px] font-semibold text-white/30 uppercase tracking-[0.16em] mb-2">Library</div>
+                <div className="text-3xl font-bold text-white tracking-tight">2.4M+</div>
+                <div className="text-[11px] text-white/30 mt-0.5">tracks available</div>
+            </div>
+            <div className="flex items-center gap-1.5 relative">
+                <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                <span className="text-[10px] text-white/30 font-medium">Live</span>
             </div>
         </div>
     );
 }
 
-// ── The Login Page ────────────────────────────────────────────────────────────
+function BentoQuoteBlock() {
+    return (
+        <div className="relative rounded-2xl border border-white/[0.07] bg-white/[0.03] p-5 flex flex-col justify-center overflow-hidden group hover:bg-white/[0.05] transition-colors duration-300">
+            <div className="text-white/15 text-4xl font-serif leading-none mb-2 select-none">"</div>
+            <p className="text-[13px] text-white/50 leading-relaxed font-medium italic">
+                Music is the shorthand of emotion.
+            </p>
+            <div className="mt-3 text-[10px] text-white/20 uppercase tracking-[0.18em]">— Leo Tolstoy</div>
+        </div>
+    );
+}
+
+function LeftPanel() {
+    return (
+        <motion.div
+            variants={containerVariants}
+            initial="hidden"
+            animate="show"
+            className="hidden lg:flex flex-col min-h-full bg-[#060608] border-r border-white/[0.05] p-8 gap-6 overflow-hidden"
+        >
+            <motion.div variants={itemVariants}><VesperLogo /></motion.div>
+            <motion.div variants={itemVariants} className="flex-1 grid grid-cols-2 grid-rows-2 gap-3 min-h-0">
+                <BentoImageBlock src="/pins/pin1.jpg" />
+                <BentoStatBlock />
+                <BentoQuoteBlock />
+                <BentoImageBlock src="/pins/pin3.jpg" />
+            </motion.div>
+            <motion.div variants={itemVariants}>
+                <p className="text-[11px] text-white/20 tracking-[0.04em] leading-relaxed">
+                    Premium audio streaming,<br />elevated to an art form.
+                </p>
+            </motion.div>
+        </motion.div>
+    );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Mobile hero banner — shown only below lg
+// ─────────────────────────────────────────────────────────────────────────────
+function MobileHero() {
+    return (
+        <div className="relative lg:hidden w-full h-44 overflow-hidden flex-shrink-0">
+            <img
+                src="/pins/pin1.jpg"
+                alt=""
+                className="absolute inset-0 w-full h-full object-cover opacity-40"
+                draggable={false}
+            />
+            <div className="absolute inset-0 bg-gradient-to-b from-[#080809]/30 via-transparent to-[#080809]" />
+            <div className="absolute bottom-0 left-0 right-0 px-5 pb-5 flex items-end justify-between">
+                <VesperLogo />
+                <div className="flex items-center gap-1.5">
+                    <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                    <span className="text-[11px] text-white/40 font-medium">2.4M+ tracks</span>
+                </div>
+            </div>
+        </div>
+    );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Login Page
+// ─────────────────────────────────────────────────────────────────────────────
 export default function LoginPage() {
     const router = useRouter();
     const login = useAuthStore((s) => s.login);
@@ -114,146 +156,107 @@ export default function LoginPage() {
         router.replace("/");
     };
 
-    const containerVariants = {
-        hidden: { opacity: 0 },
-        show: { opacity: 1, transition: { staggerChildren: 0.1, delayChildren: 0.1 } }
-    };
-
-    const itemVariants = {
-        hidden: { opacity: 0, y: 15 },
-        show: { opacity: 1, y: 0, transition: { type: "spring" as const, stiffness: 80, damping: 20, mass: 1 } }
-    };
-
     return (
-        <main className="relative min-h-screen w-full flex flex-col items-center justify-center p-6 pb-32 md:pb-40 selection:bg-white/20 selection:text-white font-sans overflow-hidden">
-            <CinematicBackground />
+        <div className="relative flex min-h-full w-full overflow-x-hidden">
+            <AuthBackground />
 
-            {/* Bento Grid Layout */}
-            <motion.div
-                variants={containerVariants}
-                initial="hidden"
-                animate="show"
-                className="relative z-10 w-full max-w-[1100px] grid grid-cols-1 md:grid-cols-12 gap-4 auto-rows-min md:auto-rows-[140px]"
-            >
-                {/* 1. Large Visual Anchor (Left) */}
+            {/* ── Desktop: left bento panel ── */}
+            <div className="hidden lg:block relative z-10 w-[380px] xl:w-[420px] flex-shrink-0">
+                <LeftPanel />
+            </div>
+
+            {/* ── Right / Mobile: form column ── */}
+            <div className="relative z-10 flex-1 flex flex-col lg:justify-center lg:items-center">
+
+                {/* Mobile hero image strip */}
+                <MobileHero />
+
+                {/* Form container */}
                 <motion.div
-                    variants={itemVariants}
-                    className="hidden md:block md:col-span-3 md:row-span-3 rounded-[32px] overflow-hidden relative border border-white/10 group shadow-2xl"
+                    variants={containerVariants}
+                    initial="hidden"
+                    animate="show"
+                    className="w-full px-4 py-6 sm:px-6 sm:py-8 lg:px-8 lg:py-12 lg:max-w-[440px]"
                 >
-                    <img src="/pins/pin1.jpg" alt="" className="absolute inset-0 w-full h-full object-cover grayscale opacity-50 group-hover:grayscale-0 group-hover:scale-105 group-hover:opacity-80 transition-all duration-700" />
-                    <div className="absolute inset-0 bg-gradient-to-t from-[#050505] to-transparent opacity-60" />
-                </motion.div>
-
-                {/* 2. Main Login Form (Center-ish) */}
-                <motion.div
-                    variants={itemVariants}
-                    className="md:col-span-6 md:row-span-4 bg-white/[0.02] backdrop-blur-[40px] p-8 md:p-12 rounded-[40px] border border-white/10 shadow-2xl flex flex-col items-start justify-center relative overflow-hidden"
-                >
-                    {/* Inner glow effect */}
-                    <div className="absolute -top-24 -right-24 w-48 h-48 bg-indigo-500/10 blur-[80px] rounded-full pointer-events-none" />
-
-                    <div className="relative w-full">
+                    <AuthCard className="lg:shadow-[0_24px_80px_rgba(0,0,0,0.5),inset_0_1px_0_rgba(255,255,255,0.06)]">
                         {/* Header */}
-                        <div className="mb-10 w-full">
-                            <span className="block text-xs md:text-xs tracking-[0.35em] uppercase font-bold text-white/30 mb-3 ml-1">
-                                Secure Access
-                            </span>
-                            <h1 className="text-4xl md:text-5xl font-semibold tracking-tight text-white leading-tight">
+                        <motion.div variants={itemVariants} className="mb-6 sm:mb-8">
+                            <div className="text-[10px] font-semibold text-white/30 uppercase tracking-[0.18em] mb-2">
+                                Secure access
+                            </div>
+                            <h1 className="text-2xl sm:text-[28px] font-semibold text-white tracking-tight leading-tight">
                                 Sign in
                             </h1>
-                        </div>
+                            <p className="text-sm text-white/35 mt-1.5">
+                                Welcome back. Pick up where you left off.
+                            </p>
+                        </motion.div>
 
                         {/* Form */}
-                        <form onSubmit={handleSubmit} className="flex flex-col gap-6 w-full">
-                            <GlassInput
-                                label="Email Address"
-                                type="email"
-                                value={email}
-                                onChange={(e) => setEmail(e.target.value)}
-                                placeholder="you@example.com"
-                                required
-                            />
+                        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+                            <motion.div variants={itemVariants}>
+                                <GlassInput
+                                    label="Email address"
+                                    type="email"
+                                    inputMode="email"
+                                    autoComplete="email"
+                                    value={email}
+                                    onChange={(e) => setEmail(e.target.value)}
+                                    placeholder="you@example.com"
+                                    required
+                                    error={!!error}
+                                />
+                            </motion.div>
 
-                            <div className="flex flex-col gap-1 w-full">
+                            <motion.div variants={itemVariants}>
                                 <GlassInput
                                     label="Password"
                                     type={showPass ? "text" : "password"}
+                                    autoComplete="current-password"
                                     value={password}
                                     onChange={(e) => setPassword(e.target.value)}
                                     placeholder="••••••••"
                                     required
+                                    error={!!error}
                                     suffix={
                                         <button type="button" onClick={() => setShowPass(!showPass)} tabIndex={-1} className="p-1">
                                             {showPass ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                                         </button>
                                     }
                                 />
-                                <div className="flex justify-end pr-1 pt-1">
-                                    <button type="button" className="text-xs font-semibold text-white/20 hover:text-white/40 transition-colors uppercase tracking-wider">
-                                        Forgot?
+                                <div className="flex justify-end mt-1.5">
+                                    <button type="button" className="text-[11px] text-white/25 hover:text-white/50 transition-colors font-medium py-1 px-0.5 -mr-0.5">
+                                        Forgot password?
                                     </button>
                                 </div>
-                            </div>
+                            </motion.div>
 
                             <AnimatePresence>
                                 {error && (
-                                    <motion.div
-                                        initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }}
-                                        className="overflow-hidden"
-                                    >
-                                        <div className="text-red-400/80 text-[12px] font-medium bg-red-400/5 border border-red-400/10 px-4 py-2 rounded-xl mb-2">{error}</div>
+                                    <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} className="overflow-hidden">
+                                        <div className="text-red-400/80 text-xs font-medium bg-red-400/[0.06] border border-red-400/[0.12] px-3.5 py-2.5 rounded-xl">
+                                            {error}
+                                        </div>
                                     </motion.div>
                                 )}
                             </AnimatePresence>
 
-                            <motion.button
-                                type="submit"
-                                disabled={submitting}
-                                whileHover={{ scale: 1.01 }}
-                                whileTap={{ scale: 0.98 }}
-                                className="w-full h-14 flex items-center justify-center bg-white text-black rounded-full font-bold text-[14px] uppercase tracking-widest hover:bg-white/90 disabled:opacity-70 transition-all shadow-[0_0_32px_rgba(255,255,255,0.1)]"
-                            >
-                                {submitting ? (
-                                    <motion.span animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-                                        className="block w-5 h-5 border-2 border-black/20 border-t-black rounded-full" />
-                                ) : "Sign in"}
-                            </motion.button>
+                            <motion.div variants={itemVariants} className="pt-1">
+                                <AuthSubmitButton submitting={submitting} label="Sign in" />
+                            </motion.div>
                         </form>
 
-                        <div className="mt-10 pt-8 border-t border-white/5 w-full flex flex-col md:flex-row items-center justify-between gap-4">
-                            <p className="text-sm text-white/30 font-medium">
+                        <motion.div variants={itemVariants} className="mt-6 pt-5 border-t border-white/[0.06] text-center">
+                            <p className="text-sm text-white/30">
                                 No account?{" "}
-                                <Link href="/register" className="text-white/60 hover:text-white transition-colors">
+                                <Link href="/register" className="text-white/60 hover:text-white transition-colors font-medium">
                                     Create one
                                 </Link>
                             </p>
-                        </div>
-                    </div>
+                        </motion.div>
+                    </AuthCard>
                 </motion.div>
-
-                {/* 3. Tall Visual Anchor (Right) */}
-                <motion.div
-                    variants={itemVariants}
-                    className="hidden md:block md:col-span-3 md:row-span-4 rounded-[32px] overflow-hidden relative border border-white/10 group shadow-2xl"
-                >
-                    <img src="/pins/pin3.jpg" alt="" className="absolute inset-0 w-full h-full object-cover saturate-[1.2] opacity-40 group-hover:scale-110 group-hover:opacity-70 transition-all duration-1000" />
-                    <div className="absolute inset-0 bg-[#050505]/20 backdrop-grayscale-[40%]" />
-                    <div className="absolute bottom-6 left-6 right-6">
-                        <div className="text-xs font-mono text-white/30 uppercase tracking-[0.3em]">Sonic Space</div>
-                    </div>
-                </motion.div>
-
-                {/* 4. Small Square Anchor (Bottom Left) */}
-                <motion.div
-                    variants={itemVariants}
-                    className="hidden md:block md:col-span-3 md:row-span-1 rounded-[32px] overflow-hidden relative border border-white/10 group shadow-2xl"
-                >
-                    <img src="/pins/pin4.jpg" alt="" className="absolute inset-0 w-full h-full object-cover opacity-30 group-hover:opacity-60 transition-opacity duration-700" />
-                </motion.div>
-
-                {/* 5. Minimal Label Anchor (Bottom Right-ish) */}
-
-            </motion.div>
-        </main>
+            </div>
+        </div>
     );
 }

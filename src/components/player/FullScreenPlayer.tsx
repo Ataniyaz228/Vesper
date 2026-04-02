@@ -152,7 +152,7 @@ export const FullScreenPlayer = () => {
                         initial={{ opacity: 0, y: -20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.25 }}
-                        className="relative z-30 flex items-center justify-between px-8 md:px-12 h-20 md:h-32 w-full shrink-0"
+                        className="relative z-30 flex items-center justify-between px-6 md:px-12 h-16 md:h-24 w-full shrink-0"
                     >
                         <button
                             onClick={() => setFullScreen(false)}
@@ -183,7 +183,7 @@ export const FullScreenPlayer = () => {
                                 opacity: 1,
                             }}
                             transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-                            className="h-full flex flex-col items-center justify-center shrink-0 origin-center relative will-change-[width] gap-4 py-4 px-8 md:px-12"
+                            className="h-full flex flex-col items-center justify-center shrink-0 origin-center relative will-change-[width] gap-3 py-2 px-6 md:px-12 overflow-hidden"
                         >
                             {/* Album Cover */}
                             <motion.div
@@ -200,10 +200,11 @@ export const FullScreenPlayer = () => {
                                     "ring-1 ring-white/10 bg-[#0a0a0b]"
                                 )}
                                 style={{
-                                    height: "min(52vh, 520px)",
+                                    // clamp: never smaller than 160px, max 40% of viewport, cap at 440px
+                                    height: "clamp(160px, 40vh, 440px)",
                                     boxShadow: showLyrics
                                         ? `0 20px 50px -10px rgba(0,0,0,0.5), 0 0 30px rgba(${dominantColorRGB.r},${dominantColorRGB.g},${dominantColorRGB.b}, 0.15)`
-                                        : `0 50px 120px -20px rgba(0,0,0,0.7), 0 20px 60px -10px rgba(${dominantColorRGB.r},${dominantColorRGB.g},${dominantColorRGB.b}, 0.3)`,
+                                        : `0 40px 100px -20px rgba(0,0,0,0.7), 0 16px 50px -8px rgba(${dominantColorRGB.r},${dominantColorRGB.g},${dominantColorRGB.b}, 0.3)`,
                                     WebkitMaskImage: '-webkit-radial-gradient(white, black)'
                                 }}
                             >
@@ -227,12 +228,12 @@ export const FullScreenPlayer = () => {
                                 animate={{ opacity: 1, y: 0 }}
                                 initial={{ opacity: 0, y: 10 }}
                                 transition={{ duration: 0.6, delay: 0.15, ease: [0.16, 1, 0.3, 1] }}
-                                className="flex flex-col items-center shrink-0"
+                                className="flex flex-col items-center shrink-0 text-center px-4 max-w-lg w-full"
                             >
-                                <h2 className="text-xl sm:text-2xl md:text-3xl font-black tracking-tight leading-tight text-white line-clamp-1">
+                                <h2 className="text-lg sm:text-2xl md:text-3xl font-black tracking-tight leading-tight text-white line-clamp-2">
                                     {cleanTitle(currentTrack.title)}
                                 </h2>
-                                <p className="text-xs md:text-xs text-white/35 tracking-[0.2em] uppercase font-semibold mt-1.5">
+                                <p className="text-[11px] md:text-xs text-white/35 tracking-[0.2em] uppercase font-semibold mt-1.5">
                                     {currentTrack.artist}
                                 </p>
                             </motion.div>
@@ -260,7 +261,7 @@ export const FullScreenPlayer = () => {
                     </div>
 
                     {/* 3. Footer */}
-                    <div className="relative z-30 w-full flex flex-col items-center gap-4 md:gap-6 shrink-0 pt-4 pb-6 md:pt-6 md:pb-10 px-8">
+                    <div className="relative z-30 w-full flex flex-col items-center gap-3 md:gap-5 shrink-0 pt-3 pb-4 md:pt-5 md:pb-8 px-5 md:px-8">
 
 
                         {/* Player Console */}

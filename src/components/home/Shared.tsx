@@ -50,7 +50,7 @@ export function Marquee({ items }: { items: string[] }) {
             <div className="absolute inset-y-0 right-0 w-20 z-10" style={{ background: "linear-gradient(to left, #0a0a0c, transparent)" }} />
             <motion.div animate={{ x: "-33.33%" }} transition={{ duration: 32, repeat: Infinity, ease: "linear" }} className="flex gap-10 w-max">
                 {doubled.map((name, i) => (
-                    <span key={i} className="text-white/10 text-xs uppercase tracking-[0.35em] font-semibold flex items-center gap-4">
+                    <span key={`${name}-${i}`} className="text-white/10 text-xs uppercase tracking-[0.35em] font-semibold flex items-center gap-4">
                         {name} <span className="w-[3px] h-[3px] rounded-full bg-white/10 inline-block" />
                     </span>
                 ))}

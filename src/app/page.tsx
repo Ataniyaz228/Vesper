@@ -118,7 +118,7 @@ function HomeContent() {
         <div className="absolute inset-0 opacity-[0.06] pointer-events-none mix-blend-overlay" style={{ backgroundImage: NOISE }} />
 
         {/* Top bar */}
-        <div className="absolute top-0 left-0 right-0 z-20 flex items-start justify-between px-8 pt-7">
+        <div className="absolute top-0 left-0 right-0 z-20 flex items-start justify-between px-4 sm:px-6 lg:px-8 pt-7">
           <AnimatePresence>
             {!searchOpen && (
               <motion.span initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
@@ -158,7 +158,7 @@ function HomeContent() {
           {!searchOpen && (
             <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 10 }}
               transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-              className="absolute bottom-0 left-0 right-0 z-10 px-8 pb-9 flex items-end justify-between gap-8">
+              className="absolute bottom-0 left-0 right-0 z-10 px-4 sm:px-6 lg:px-8 pb-7 sm:pb-9 flex items-end justify-between gap-4 sm:gap-8">
               <div className="flex flex-col gap-2 min-w-0 flex-1">
                 <div className="flex items-center gap-2">
                   <motion.div className="w-1.5 h-1.5 rounded-full bg-white/40"
@@ -187,14 +187,14 @@ function HomeContent() {
       <AnimatePresence>
         {searchOpen && (
           <motion.section initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 16 }}
-            transition={{ duration: 0.48, ease: [0.16, 1, 0.3, 1] }} className="px-8 pt-6 pb-4">
+            transition={{ duration: 0.48, ease: [0.16, 1, 0.3, 1] }} className="px-4 sm:px-6 lg:px-8 pt-6 pb-4">
             {isSearching ? (
               <div className="flex justify-center py-14"><Loader2 className="w-5 h-5 animate-spin text-white/25" /></div>
             ) : results.length > 0 ? (
               <div className="flex flex-col rounded-[22px] overflow-hidden border border-white/[0.04] backdrop-blur-3xl"
                 style={{ background: "rgba(255,255,255,0.024)" }}>
                 {results.map((t, i) => (
-                  <TrackRow key={t.id} index={i + 1} track={t} title={t.title} artist={t.artist}
+                  <TrackRow key={`${t.id}-${i}`} index={i + 1} track={t} title={t.title} artist={t.artist}
                     duration="--:--" isActive={currentTrack?.id === t.id} onClick={() => handlePlay(t, i)} />
                 ))}
               </div>
@@ -221,14 +221,14 @@ function HomeContent() {
               <div className="pt-14">
                 <SectionHeader eyebrow="Curated" title="For You" />
                 {loadingShelf ? <div className="flex justify-center py-8"><Loader2 className="w-5 h-5 animate-spin text-white/18" /></div> : (
-                  <DragShelf>{shelf.map((item, i) => <ShelfCard key={item.id} item={item} index={i} onClick={() => router.push(`/playlist/${item.id}`)} />)}</DragShelf>
+                  <DragShelf>{shelf.map((item, i) => <ShelfCard key={`${item.id}-${i}`} item={item} index={i} onClick={() => router.push(`/playlist/${item.id}`)} />)}</DragShelf>
                 )}
               </div>
             </Reveal>
 
             {/* ── Mood panels ── */}
             <Reveal delay={0.04}>
-              <div className="pt-16 px-8">
+              <div className="pt-16 px-4 sm:px-6 lg:px-8">
                 <SectionHeader eyebrow="Vibe" title="Choose Your Mood" />
                 <div className="flex gap-3">
                   {MOODS.map((m) => (
@@ -246,7 +246,7 @@ function HomeContent() {
                 <div className="mx-8 rounded-[22px] overflow-hidden border border-white/[0.04] backdrop-blur-2xl"
                   style={{ background: "rgba(255,255,255,0.022)" }}>
                   {trending.length === 0 ? <div className="flex justify-center py-10"><Loader2 className="w-5 h-5 animate-spin text-white/20" /></div> : (
-                    trending.map((t, i) => <ChartRow key={t.id} track={t} index={i} active={currentTrack?.id === t.id} onClick={() => playTrack(t, trending)} />)
+                    trending.map((t, i) => <ChartRow key={`${t.id}-${i}`} track={t} index={i} active={currentTrack?.id === t.id} onClick={() => playTrack(t, trending)} />)
                   )}
                 </div>
               </div>

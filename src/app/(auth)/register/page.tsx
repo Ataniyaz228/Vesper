@@ -4,92 +4,120 @@ import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Eye, EyeOff } from "lucide-react";
+import { Eye, EyeOff, ArrowLeft, Music, Headphones, Zap, Globe } from "lucide-react";
 import { useAuthStore } from "@/store/useAuthStore";
+import {
+    AuthBackground,
+    AuthCard,
+    GlassInput,
+    AuthSubmitButton,
+    PasswordStrengthBar,
+    getPasswordStrength,
+    containerVariants,
+    itemVariants,
+} from "@/components/auth/AuthShared";
 
-// ── Depth Overlay & Cinematic Background ──────────────────────────────────────
-function CinematicBackground() {
+// ─────────────────────────────────────────────────────────────────────────────
+// Shared Logo mark
+// ─────────────────────────────────────────────────────────────────────────────
+function VesperLogo() {
     return (
-        <>
-            <div className="fixed inset-0 pointer-events-none select-none z-0 overflow-hidden bg-[#050505]">
-                {/* Giant ambient glow */}
-                <motion.div
-                    className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[90vw] h-[90vw] max-w-[1200px] max-h-[1200px] rounded-full"
-                    style={{
-                        background: "radial-gradient(circle, rgba(99, 102, 241, 0.08) 0%, rgba(159, 18, 57, 0.03) 40%, transparent 70%)",
-                        filter: "blur(120px)",
-                    }}
-                    animate={{ scale: [1, 1.08, 1], opacity: [0.6, 1, 0.6] }}
-                    transition={{ duration: 16, repeat: Infinity, ease: "easeInOut" }}
-                />
-                {/* Giant VESPER text */}
-                <div className="absolute inset-0 flex items-center justify-center overflow-hidden">
-                    <span className="text-[clamp(12rem,28vw,30rem)] font-black leading-none tracking-tighter text-white opacity-[0.02] select-none">
-                        VESPER
-                    </span>
-                </div>
-                {/* Noise overlay */}
-                <div
-                    className="absolute inset-0 mix-blend-overlay opacity-[0.04]"
-                    style={{
-                        backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")`,
-                    }}
-                />
+        <div className="flex items-center gap-2.5">
+            <div className="w-7 h-7 rounded-lg bg-white/90 flex items-center justify-center flex-shrink-0">
+                <svg className="w-4 h-4 text-black" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z" />
+                </svg>
             </div>
-
-            {/* Foreground Drifting Crystals / Energy Shards (Depth of Field) */}
-            <div className="fixed inset-0 pointer-events-none select-none z-20 overflow-hidden">
-                <motion.div
-                    className="absolute -bottom-32 -left-32 w-96 h-96 rounded-full"
-                    style={{
-                        background: "radial-gradient(ellipse, rgba(139, 92, 246, 0.15) 0%, transparent 60%)",
-                        filter: "blur(40px)",
-                    }}
-                    animate={{ x: [0, 40, 0], y: [0, -30, 0], rotate: [0, 15, 0] }}
-                    transition={{ duration: 20, repeat: Infinity, ease: "easeInOut" }}
-                />
-                <motion.div
-                    className="absolute -top-40 -right-20 w-[30rem] h-[30rem] rounded-full"
-                    style={{
-                        background: "radial-gradient(ellipse, rgba(79, 70, 229, 0.12) 0%, transparent 60%)",
-                        filter: "blur(60px)",
-                    }}
-                    animate={{ x: [0, -50, 0], y: [0, 40, 0], rotate: [0, -10, 0] }}
-                    transition={{ duration: 25, repeat: Infinity, ease: "easeInOut" }}
-                />
-            </div>
-        </>
+            <span className="text-white font-semibold text-[15px] tracking-tight">Vesper</span>
+        </div>
     );
 }
 
-// ── Premium Glass Input Field ──────────────────────────────────────────────────
-interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
-    label: string;
-    suffix?: React.ReactNode;
-}
-
-function GlassInput({ label, suffix, ...props }: InputProps) {
+// ─────────────────────────────────────────────────────────────────────────────
+// Mobile hero — shown below lg, replaced by right editorial panel on desktop
+// ─────────────────────────────────────────────────────────────────────────────
+function MobileHero() {
     return (
-        <div className="flex flex-col gap-2 w-full text-left">
-            <label className="text-xs font-semibold text-white/50 uppercase tracking-widest pl-1">
-                {label}
-            </label>
-            <div className="relative">
-                <input
-                    {...props}
-                    className={`w-full bg-white/[0.03] text-white text-sm placeholder:text-white/20 px-4 py-3.5 rounded-2xl outline-none transition-all duration-300 border border-white/10 focus:border-white/30 focus:bg-white/[0.06] ${suffix ? 'pr-12' : ''}`}
-                />
-                {suffix && (
-                    <div className="absolute right-4 top-1/2 -translate-y-1/2 text-white/30 hover:text-white/70 transition-colors flex items-center justify-center">
-                        {suffix}
-                    </div>
-                )}
+        <div className="relative lg:hidden w-full h-48 overflow-hidden flex-shrink-0">
+            <img
+                src="/pins/pin22.jpg"
+                alt=""
+                className="absolute inset-0 w-full h-full object-cover opacity-35"
+                draggable={false}
+            />
+            <div className="absolute inset-0 bg-gradient-to-b from-[#080809]/20 via-transparent to-[#080809]" />
+            {/* Feature chips */}
+            <div className="absolute bottom-0 left-0 right-0 px-5 pb-5">
+                <VesperLogo />
+                <div className="mt-3 flex flex-wrap gap-2">
+                    {["2.4M+ tracks", "Spatial audio", "Offline play"].map((f) => (
+                        <span key={f} className="text-[10px] text-white/40 bg-white/[0.06] border border-white/[0.08] rounded-full px-2.5 py-1 font-medium">
+                            {f}
+                        </span>
+                    ))}
+                </div>
             </div>
         </div>
     );
 }
 
-// ── The Register Page ─────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────────────
+// Right editorial panel — desktop only
+// ─────────────────────────────────────────────────────────────────────────────
+const FEATURES = [
+    { icon: Music,      label: "2.4M+ tracks",    sub: "From across the globe" },
+    { icon: Headphones, label: "Spatial audio",    sub: "Immersive listening" },
+    { icon: Zap,        label: "Zero buffering",   sub: "Stream-optimised CDN" },
+    { icon: Globe,      label: "Offline playback", sub: "Take it anywhere" },
+];
+
+function RightPanel() {
+    return (
+        <motion.div
+            variants={containerVariants}
+            initial="hidden"
+            animate="show"
+            className="hidden lg:flex flex-col min-h-full bg-[#060608] border-l border-white/[0.05] overflow-hidden relative"
+        >
+            <div className="absolute inset-0">
+                <img src="/pins/pin22.jpg" alt="" className="w-full h-full object-cover opacity-30" draggable={false} />
+                <div className="absolute inset-0 bg-gradient-to-t from-[#060608] via-[#060608]/55 to-[#060608]/30" />
+                <div className="absolute inset-0 bg-gradient-to-r from-[#060608]/50 to-transparent" />
+            </div>
+            <div className="relative z-10 flex flex-col h-full p-10">
+                <motion.div variants={itemVariants}><VesperLogo /></motion.div>
+                <motion.div variants={itemVariants} className="mt-auto">
+                    <div className="text-[10px] font-semibold text-white/30 uppercase tracking-[0.18em] mb-3">
+                        Elevate your listening
+                    </div>
+                    <h2 className="text-[clamp(26px,2.6vw,38px)] font-semibold text-white leading-[1.15] tracking-tight mb-8 max-w-[320px]">
+                        Your entire music universe, one account.
+                    </h2>
+                    <div className="flex flex-col gap-3">
+                        {FEATURES.map(({ icon: Icon, label, sub }) => (
+                            <motion.div key={label} variants={itemVariants} className="flex items-center gap-3.5 group">
+                                <div className="w-8 h-8 rounded-xl bg-white/[0.06] border border-white/[0.08] flex items-center justify-center flex-shrink-0 group-hover:bg-white/[0.10] transition-colors duration-200">
+                                    <Icon className="w-3.5 h-3.5 text-white/50 group-hover:text-white/75 transition-colors duration-200" />
+                                </div>
+                                <div>
+                                    <div className="text-[13px] font-medium text-white/80 leading-tight">{label}</div>
+                                    <div className="text-[11px] text-white/30 mt-0.5">{sub}</div>
+                                </div>
+                            </motion.div>
+                        ))}
+                    </div>
+                </motion.div>
+                <motion.div variants={itemVariants} className="mt-10">
+                    <div className="text-[11px] text-white/18 tracking-[0.06em]">Joining is free. No credit card required.</div>
+                </motion.div>
+            </div>
+        </motion.div>
+    );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Register Page
+// ─────────────────────────────────────────────────────────────────────────────
 export default function RegisterPage() {
     const router = useRouter();
     const register = useAuthStore((s) => s.register);
@@ -101,6 +129,8 @@ export default function RegisterPage() {
     const [showPass, setShowPass] = useState(false);
     const [submitting, setSubmitting] = useState(false);
     const [error, setError] = useState<string | null>(null);
+
+    const strength = getPasswordStrength(password);
 
     useEffect(() => {
         if (user) router.replace("/");
@@ -116,157 +146,136 @@ export default function RegisterPage() {
         router.replace("/");
     };
 
-    const containerVariants = {
-        hidden: { opacity: 0 },
-        show: { opacity: 1, transition: { staggerChildren: 0.1, delayChildren: 0.1 } }
-    };
-
-    const itemVariants = {
-        hidden: { opacity: 0, y: 15 },
-        show: { opacity: 1, y: 0, transition: { type: "spring" as const, stiffness: 80, damping: 20, mass: 1 } }
-    };
-
     return (
-        <main className="relative min-h-screen w-full flex flex-col items-center justify-center p-6 pb-32 md:pb-40 selection:bg-white/20 selection:text-white font-sans overflow-hidden">
-            <CinematicBackground />
+        <div className="relative flex min-h-full w-full overflow-x-hidden">
+            <AuthBackground />
 
-            {/* Bento Grid Layout */}
-            <motion.div
-                variants={containerVariants}
-                initial="hidden"
-                animate="show"
-                className="relative z-10 w-full max-w-[1100px] grid grid-cols-1 md:grid-cols-12 gap-4 auto-rows-min md:auto-rows-[140px]"
-            >
-                {/* 1. Tall Visual Anchor (Left) */}
+            {/* ── Left / Mobile: form column ── */}
+            <div className="relative z-10 flex-1 flex flex-col lg:justify-center lg:items-center">
+
+                {/* Mobile hero image strip */}
+                <MobileHero />
+
+                {/* Form container */}
                 <motion.div
-                    variants={itemVariants}
-                    className="hidden md:block md:col-span-3 md:row-span-4 rounded-[32px] overflow-hidden relative border border-white/10 group shadow-2xl"
+                    variants={containerVariants}
+                    initial="hidden"
+                    animate="show"
+                    className="w-full px-4 py-6 sm:px-6 sm:py-8 lg:px-8 lg:py-12 lg:max-w-[440px]"
                 >
-                    <img src="/pins/pin22.jpg" alt="" className="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition-transform duration-1000 opacity-60" />
-                    <div className="absolute inset-0 bg-gradient-to-b from-[#050505]/20 to-[#050505]/60" />
-                    <div className="absolute top-8 left-8">
-                        <div className="text-xs font-mono text-white/40 uppercase tracking-[0.4em]">New Identity</div>
-                    </div>
-                </motion.div>
+                    {/* Back link */}
+                    <motion.div variants={itemVariants} className="mb-4">
+                        <Link
+                            href="/login"
+                            className="inline-flex items-center gap-1.5 text-[12px] text-white/35 hover:text-white/65 transition-colors font-medium group py-1"
+                        >
+                            <ArrowLeft className="w-3.5 h-3.5 transition-transform group-hover:-translate-x-0.5 duration-200" />
+                            Sign in instead
+                        </Link>
+                    </motion.div>
 
-                {/* 2. Main Register Form (Center) */}
-                <motion.div
-                    variants={itemVariants}
-                    className="md:col-span-6 md:row-span-4 bg-white/[0.02] backdrop-blur-[40px] p-8 md:p-12 rounded-[40px] border border-white/10 shadow-2xl flex flex-col items-start justify-center relative overflow-hidden"
-                >
-                    <div className="absolute -bottom-24 -left-24 w-48 h-48 bg-violet-500/10 blur-[80px] rounded-full pointer-events-none" />
-
-                    <div className="relative w-full">
+                    <AuthCard>
                         {/* Header */}
-                        <div className="mb-10 w-full">
-                            <span className="block text-xs md:text-xs tracking-[0.35em] uppercase font-bold text-white/30 mb-3 ml-1">
-                                Join the Vesper
-                            </span>
-                            <h1 className="text-4xl md:text-5xl font-semibold tracking-tight text-white leading-tight">
+                        <motion.div variants={itemVariants} className="mb-6 sm:mb-8">
+                            <div className="text-[10px] font-semibold text-white/30 uppercase tracking-[0.18em] mb-2">
+                                New account
+                            </div>
+                            <h1 className="text-2xl sm:text-[28px] font-semibold text-white tracking-tight leading-tight">
                                 Create account
                             </h1>
-                        </div>
+                            <p className="text-sm text-white/35 mt-1.5">
+                                Join and start listening in seconds.
+                            </p>
+                        </motion.div>
 
                         {/* Form */}
-                        <form onSubmit={handleSubmit} className="flex flex-col gap-6 w-full">
-                            <GlassInput
-                                label="Username"
-                                type="text"
-                                value={username}
-                                onChange={(e) => setUsername(e.target.value)}
-                                placeholder="your_handle"
-                                required
-                            />
+                        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+                            <motion.div variants={itemVariants}>
+                                <GlassInput
+                                    label="Username"
+                                    type="text"
+                                    autoComplete="username"
+                                    autoCapitalize="none"
+                                    value={username}
+                                    onChange={(e) => setUsername(e.target.value)}
+                                    placeholder="your_handle"
+                                    required
+                                    error={!!error}
+                                />
+                            </motion.div>
 
-                            <GlassInput
-                                label="Email Address"
-                                type="email"
-                                value={email}
-                                onChange={(e) => setEmail(e.target.value)}
-                                placeholder="you@example.com"
-                                required
-                            />
+                            <motion.div variants={itemVariants}>
+                                <GlassInput
+                                    label="Email address"
+                                    type="email"
+                                    inputMode="email"
+                                    autoComplete="email"
+                                    value={email}
+                                    onChange={(e) => setEmail(e.target.value)}
+                                    placeholder="you@example.com"
+                                    required
+                                    error={!!error}
+                                />
+                            </motion.div>
 
-                            <GlassInput
-                                label="Password"
-                                type={showPass ? "text" : "password"}
-                                value={password}
-                                onChange={(e) => setPassword(e.target.value)}
-                                placeholder="••••••••"
-                                required
-                                suffix={
-                                    <button type="button" onClick={() => setShowPass(!showPass)} tabIndex={-1} className="p-1">
-                                        {showPass ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                                    </button>
-                                }
-                            />
+                            <motion.div variants={itemVariants}>
+                                <GlassInput
+                                    label="Password"
+                                    type={showPass ? "text" : "password"}
+                                    autoComplete="new-password"
+                                    value={password}
+                                    onChange={(e) => setPassword(e.target.value)}
+                                    placeholder="••••••••"
+                                    required
+                                    error={!!error}
+                                    suffix={
+                                        <button type="button" onClick={() => setShowPass(!showPass)} tabIndex={-1} className="p-1">
+                                            {showPass ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                                        </button>
+                                    }
+                                />
+                                <AnimatePresence>
+                                    {password.length > 0 && (
+                                        <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} className="overflow-hidden">
+                                            <div className="pt-2 px-0.5">
+                                                <PasswordStrengthBar strength={strength} />
+                                            </div>
+                                        </motion.div>
+                                    )}
+                                </AnimatePresence>
+                            </motion.div>
 
                             <AnimatePresence>
                                 {error && (
-                                    <motion.div
-                                        initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }}
-                                        className="overflow-hidden"
-                                    >
-                                        <div className="text-red-400/80 text-[12px] font-medium bg-red-400/5 border border-red-400/10 px-4 py-2 rounded-xl mb-2">{error}</div>
+                                    <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} className="overflow-hidden">
+                                        <div className="text-red-400/80 text-xs font-medium bg-red-400/[0.06] border border-red-400/[0.12] px-3.5 py-2.5 rounded-xl">
+                                            {error}
+                                        </div>
                                     </motion.div>
                                 )}
                             </AnimatePresence>
 
-                            <motion.button
-                                type="submit"
-                                disabled={submitting}
-                                whileHover={{ scale: 1.01 }}
-                                whileTap={{ scale: 0.98 }}
-                                className="w-full h-14 flex items-center justify-center bg-white text-black rounded-full font-bold text-[14px] uppercase tracking-widest hover:bg-white/90 disabled:opacity-70 transition-all shadow-[0_0_32px_rgba(255,255,255,0.1)]"
-                            >
-                                {submitting ? (
-                                    <motion.span animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-                                        className="block w-5 h-5 border-2 border-black/20 border-t-black rounded-full" />
-                                ) : "Create account"}
-                            </motion.button>
+                            <motion.div variants={itemVariants} className="pt-1">
+                                <AuthSubmitButton submitting={submitting} label="Create account" />
+                            </motion.div>
                         </form>
 
-                        <div className="mt-10 pt-8 border-t border-white/5 w-full">
-                            <p className="text-sm text-white/30 font-medium">
+                        <motion.div variants={itemVariants} className="mt-6 pt-5 border-t border-white/[0.06] text-center">
+                            <p className="text-sm text-white/30">
                                 Already have an account?{" "}
-                                <Link href="/login" className="text-white/60 hover:text-white transition-colors">
+                                <Link href="/login" className="text-white/60 hover:text-white transition-colors font-medium">
                                     Sign in
                                 </Link>
                             </p>
-                        </div>
-                    </div>
+                        </motion.div>
+                    </AuthCard>
                 </motion.div>
+            </div>
 
-                {/* 3. High-Contrast Anchor (Right Top) */}
-                <motion.div
-                    variants={itemVariants}
-                    className="hidden md:block md:col-span-3 md:row-span-2 rounded-[32px] overflow-hidden relative border border-white/10 group shadow-2xl"
-                >
-                    <img src="/pins/pin8.jpg" alt="" className="absolute inset-0 w-full h-full object-cover grayscale brightness-50 group-hover:grayscale-0 group-hover:brightness-100 transition-all duration-700" />
-                </motion.div>
-
-                {/* 4. Abstract Anchor (Right Bottom) */}
-                <motion.div
-                    variants={itemVariants}
-                    className="hidden md:block md:col-span-3 md:row-span-2 rounded-[32px] overflow-hidden relative border border-white/10 group shadow-2xl bg-[#09090b]"
-                >
-                    <img src="/pins/pin7.jpg" alt="" className="absolute inset-0 w-full h-full object-cover opacity-40 group-hover:opacity-70 group-hover:scale-110 transition-all duration-1000" />
-                    <div className="absolute inset-0 bg-gradient-to-tr from-indigo-500/10 to-transparent pointer-events-none" />
-                </motion.div>
-
-                {/* 5. Wide Minimal Slot (Bottom Right) */}
-                {/* <motion.div
-                    variants={itemVariants}
-                    className="hidden md:block md:col-span-9 md:row-span-1 md:col-start-1 rounded-[32px] overflow-hidden relative border border-white/5 flex items-center justify-between px-10 group"
-                >
-                    <div className="text-xs font-mono text-white/10 uppercase tracking-[0.6em]">Premium Audio Architecture</div>
-                    <div className="flex gap-4">
-                        <div className="w-1 h-1 rounded-full bg-white/10 group-hover:bg-white/30 transition-colors" />
-                        <div className="w-1 h-1 rounded-full bg-white/10 group-hover:bg-white/30 transition-colors" />
-                        <div className="w-1 h-1 rounded-full bg-white/10 group-hover:bg-white/30 transition-colors" />
-                    </div>
-                </motion.div> */}
-            </motion.div>
-        </main>
+            {/* ── Desktop: right editorial panel ── */}
+            <div className="hidden lg:block relative z-10 w-[380px] xl:w-[440px] flex-shrink-0">
+                <RightPanel />
+            </div>
+        </div>
     );
 }

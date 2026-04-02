@@ -69,7 +69,7 @@ export async function getITunesCoverArt(title: string, artist: string): Promise<
 
         try {
             const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 8000); // Relax to 8s
+            const timeoutId = setTimeout(() => controller.abort(), 3500); // Fail fast (3.5s) to avoid UI hangs
 
             const response = await fetch(url, {
                 next: { revalidate: 86400 }, // Cache for 24 hours
@@ -85,12 +85,12 @@ export async function getITunesCoverArt(title: string, artist: string): Promise<
                 // artworkUrl100 -> 600x600bb for high-res
                 return data.results[0].artworkUrl100.replace("100x100bb", "600x600bb");
             }
-        } catch (error: unknown) {
-            // Silently fail for timeouts/aborts so we don't crash SSR/Next.js
-            if (error instanceof Error && error.name === 'AbortError') {
-                console.warn(`[iTunesArt] Request timed out for: ${query}`);
+        } catch (error: any) {
+            // Silently fail to fallback gracefully and quickly
+            if (error.name === 'AbortError' || error.message?.includes('socket') || error.code === 'ETIMEDOUT' || error.cause?.code === 'ETIMEDOUT') {
+                console.warn(`[iTunesArt] Connection timed out for: ${query}`);
             } else {
-                console.error("iTunes API error:", error);
+                console.warn(`[iTunesArt] API error for ${query}:`, error.message || "Unknown error");
             }
         }
     }

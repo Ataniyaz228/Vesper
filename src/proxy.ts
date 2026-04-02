@@ -20,7 +20,7 @@ async function isValidToken(token: string): Promise<boolean> {
     }
 }
 
-export async function middleware(request: NextRequest) {
+export default async function proxy(request: NextRequest) {
     const { pathname } = request.nextUrl;
     const token = request.cookies.get(COOKIE_NAME)?.value;
     const isAuthenticated = token ? await isValidToken(token) : false;

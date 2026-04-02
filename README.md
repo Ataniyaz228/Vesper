@@ -317,7 +317,7 @@ CREATE TABLE IF NOT EXISTS listening_history (
 ```bash
 # 1. Clone the repository
 git clone <repository-url>
-cd aura-music
+cd vesper
 
 # 2. Install dependencies
 npm install
@@ -668,7 +668,7 @@ CREATE TABLE IF NOT EXISTS listening_history (
 ```bash
 # 1. Клонировать репозиторий
 git clone <repository-url>
-cd aura-music
+cd vesper
 
 # 2. Установить зависимости
 npm install

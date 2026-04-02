@@ -112,26 +112,33 @@ export const GlobalAudioPlayer = () => {
 
     return (
         <motion.div
-            initial={{ y: 100, opacity: 0, x: "-50%" }}
-            animate={{ y: 0, opacity: 1, x: "-50%" }}
-            exit={{ y: 100, opacity: 0, x: "-50%" }}
+            initial={{ y: 100, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: 100, opacity: 0 }}
             transition={{ type: "spring", damping: 26, stiffness: 200 }}
-            className="fixed bottom-8 left-[calc(50%+155px)] w-[calc(100%-360px)] max-w-4xl z-50"
+            className={[
+                "fixed z-50",
+                // Mobile: full-width strip just above the MobileNav bar
+                "bottom-[64px] left-2 right-2 md:bottom-8",
+                // Desktop: pill centered with sidebar offset
+                "md:left-[calc(50%+130px)] md:right-auto md:w-[calc(100%-300px)] md:max-w-4xl",
+                "md:-translate-x-1/2",
+            ].join(" ")}
             style={{ willChange: "transform" }}
         >
-            <div className="relative rounded-[32px] flex flex-col border border-white/5 bg-white/[0.01] backdrop-blur-3xl shadow-[0_24px_64px_rgba(0,0,0,0.5)]">
+            <div className="relative rounded-2xl md:rounded-[32px] flex flex-col border border-white/5 bg-white/[0.01] backdrop-blur-3xl shadow-[0_24px_64px_rgba(0,0,0,0.5)]">
 
                 <AmbientGlow imageUrl={currentTrack.albumImageUrl} />
 
                 {/* ── Main row ── */}
-                <div onClick={() => toggleFullScreen()} className="relative z-10 flex items-center gap-4 px-4 pt-3.5 pb-3 cursor-pointer group">
+                <div onClick={() => toggleFullScreen()} className="relative z-10 flex items-center gap-2.5 md:gap-4 px-3 pt-2.5 pb-2 md:px-4 md:pt-3.5 md:pb-3 cursor-pointer group">
 
                     {/* Album art */}
                     <AnimatePresence mode="popLayout">
                         <motion.div key={currentTrack.id}
                             initial={{ opacity: 0, scale: 0.75 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.75 }}
                             transition={{ duration: 0.35 }}
-                            className="relative w-11 h-11 rounded-xl overflow-hidden flex-shrink-0"
+                            className="relative w-9 h-9 md:w-11 md:h-11 rounded-xl overflow-hidden flex-shrink-0"
                             style={{ boxShadow: "0 4px 16px rgba(0,0,0,0.55), 0 0 0 1px rgba(255,255,255,0.07)" }}>
                             {currentTrack.albumImageUrl && (
                                 <Image src={currentTrack.albumImageUrl} alt="" fill className="object-cover" unoptimized />
@@ -155,7 +162,7 @@ export const GlobalAudioPlayer = () => {
                     </div>
 
                     {/* Controls */}
-                    <div className="flex items-center gap-4 mx-2 flex-shrink-0">
+                    <div className="flex items-center gap-2.5 md:gap-4 mx-1 md:mx-2 flex-shrink-0">
                         <motion.button
                             onClick={(e) => { e.stopPropagation(); prevTrack(); }}
                             whileHover={{ scale: 1.15 }}
@@ -188,12 +195,13 @@ export const GlobalAudioPlayer = () => {
                             <SkipForward className="w-4 h-4 fill-current" />
                         </motion.button>
 
+                        {/* Like — hidden on mobile to save space */}
                         <button
                             onClick={(e) => {
                                 e.stopPropagation();
                                 if (currentTrack) toggleLikeTrack(currentTrack);
                             }}
-                            className="ml-1 group"
+                            className="ml-1 group hidden sm:block"
                         >
                             <Heart
                                 className={cn(
@@ -208,7 +216,7 @@ export const GlobalAudioPlayer = () => {
                         <button
                             onClick={(e) => { e.stopPropagation(); toggleQueue(); }}
                             className={cn(
-                                "p-1.5 rounded-lg transition-all",
+                                "p-1.5 rounded-lg transition-all hidden sm:block",
                                 isQueueOpen
                                     ? "bg-white/12 text-white"
                                     : "text-white/20 hover:text-white/50 hover:bg-white/5"
@@ -225,7 +233,7 @@ export const GlobalAudioPlayer = () => {
                                 setPickerOpen(p => !p);
                             }}
                             className={cn(
-                                "p-1.5 rounded-lg transition-all",
+                                "p-1.5 rounded-lg transition-all hidden sm:block",
                                 pickerOpen
                                     ? "bg-white/12 text-white"
                                     : "text-white/20 hover:text-white/50 hover:bg-white/5"
@@ -291,7 +299,7 @@ export const GlobalAudioPlayer = () => {
                     onMouseUp={() => setIsDrag(false)}
                     onClick={seek}
                     className="relative z-10 flex items-center cursor-pointer select-none"
-                    style={{ height: 16, paddingLeft: 16, paddingRight: 16, marginTop: -2 }}
+                    style={{ height: 10, paddingLeft: 12, paddingRight: 12, marginTop: -1 }}
                 >
                     {/* Track */}
                     <div className="absolute inset-x-4 rounded-full bg-white/5" style={{ height: hover ? 2 : 1, top: "50%", transform: "translateY(-50%)", transition: "height 0.3s ease" }} />
