@@ -115,7 +115,7 @@ function SplitHero({ track, allTracks }: { track: DiscoverTrack; allTracks: Trac
                         my.set((e.clientY - r.top) / r.height - 0.5);
                     }}
                     onMouseLeave={() => { mx.set(0); my.set(0); }}
-                    onClick={() => playTrack(track, allTracks)}
+                    onClick={() => playTrack(track, allTracks, "Discover")}
                 >
                     <div
                         className="relative overflow-hidden"
@@ -204,7 +204,7 @@ function SplitHero({ track, allTracks }: { track: DiscoverTrack; allTracks: Trac
                     {/* Action buttons */}
                     <div className="flex items-center gap-3 mt-2 mx-auto lg:mx-0">
                         <motion.button
-                            onClick={() => playTrack(track, allTracks)}
+                            onClick={() => playTrack(track, allTracks, "Discover")}
                             whileHover={{ scale: 1.04 }}
                             whileTap={{ scale: 0.96 }}
                             className="flex items-center gap-2.5 text-xs font-bold px-7 py-3.5 rounded-full bg-white text-black transition-all"
@@ -387,7 +387,7 @@ function EditorialTrackList({ tracks, label }: { tracks: Track[]; label: string 
                     return (
                         <motion.div
                             key={`${t.id}-${i}`}
-                            onClick={() => playTrack(t, tracks)}
+                            onClick={() => playTrack(t, tracks, "Discover: " + label)}
                             initial={{ opacity: 0, x: -12 }}
                             whileInView={{ opacity: 1, x: 0 }}
                             viewport={{ once: true, margin: "-20px" }}
@@ -541,7 +541,7 @@ function SearchOverlay({
                                         artist={t.artist}
                                         duration="--:--"
                                         isActive={currentTrack?.id === t.id}
-                                        onClick={() => playTrack(t, results.slice(i))}
+                                        onClick={() => playTrack(t, results.slice(i), "Поиск")}
                                     />
                                 ))}
                             </div>
@@ -702,7 +702,7 @@ export function DiscoverClientView({ initialTracks }: { initialTracks: DiscoverT
                                     key={`${t.id}-${i}`}
                                     track={t}
                                     index={i}
-                                    onClick={() => playTrack(t, otherTracks)}
+                                    onClick={() => playTrack(t, otherTracks, "Discover: New Releases")}
                                 />
                             ))}
                         </HorizontalScroll>

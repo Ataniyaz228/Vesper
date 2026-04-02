@@ -89,7 +89,7 @@ function HomeContent() {
   };
   const openSearch = () => { setSearchOpen(true); setTimeout(() => inputRef.current?.focus(), 40); };
   const closeSearch = () => { setSearchOpen(false); setQuery(""); setResults([]); };
-  const handlePlay = (t: Track, i: number) => playTrack(t, results.slice(i));
+  const handlePlay = (t: Track, i: number) => playTrack(t, results.slice(i), "Поиск");
   const marqueeItems = trending.map(t => t.artist.split(",")[0].trim()).filter(Boolean);
 
   return (
@@ -246,7 +246,7 @@ function HomeContent() {
                 <div className="mx-8 rounded-[22px] overflow-hidden border border-white/[0.04] backdrop-blur-2xl"
                   style={{ background: "rgba(255,255,255,0.022)" }}>
                   {trending.length === 0 ? <div className="flex justify-center py-10"><Loader2 className="w-5 h-5 animate-spin text-white/20" /></div> : (
-                    trending.map((t, i) => <ChartRow key={`${t.id}-${i}`} track={t} index={i} active={currentTrack?.id === t.id} onClick={() => playTrack(t, trending)} />)
+                    trending.map((t, i) => <ChartRow key={`${t.id}-${i}`} track={t} index={i} active={currentTrack?.id === t.id} onClick={() => playTrack(t, trending, "В тренде")} />)
                   )}
                 </div>
               </div>

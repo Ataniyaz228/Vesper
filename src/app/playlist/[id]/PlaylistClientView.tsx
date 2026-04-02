@@ -89,8 +89,8 @@ export function PlaylistClientView({ playlist }: { playlist: Playlist }) {
     // Sticky mini-header reveals when scroll > 320
     const miniHeaderY = useSpring(useTransform(scrollY, [280, 340], ["-100%", "0%"]), { stiffness: 200, damping: 30 });
 
-    const handlePlay = (track: Track, i: number) => playTrack(track, playlist.tracks.slice(i));
-    const handlePlayAll = () => playlist.tracks.length > 0 && playTrack(playlist.tracks[0], playlist.tracks);
+    const handlePlay = (track: Track, i: number) => playTrack(track, playlist.tracks.slice(i), `Плейлист: ${playlist.title}`);
+    const handlePlayAll = () => playlist.tracks.length > 0 && playTrack(playlist.tracks[0], playlist.tracks, `Плейлист: ${playlist.title}`);
     const isCurrentPlaylistPlaying = playlist.tracks.some(t => t.id === currentTrack?.id) && isPlaying;
 
     return (

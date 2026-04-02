@@ -1,8 +1,11 @@
 "use client";
 
-import React, { useCallback, useRef } from "react";
+import React, { useCallback, useRef, useState } from "react";
 import { motion, AnimatePresence, Reorder, LayoutGroup } from "framer-motion";
-import { X, GripVertical, Trash2, ListMusic, Music2, Shuffle, Repeat, Repeat1, Play } from "lucide-react";
+import {
+    X, GripVertical, Trash2, ListMusic, Music2, Shuffle, Repeat, Repeat1,
+    Play, Clock, ChevronDown, Radio, Loader2, History, SkipForward,
+} from "lucide-react";
 import { usePlayerStore } from "@/store/usePlayerStore";
 import { usePlayerUIStore } from "@/store/usePlayerUIStore";
 import { cn, cleanTitle } from "@/lib/utils";
@@ -10,26 +13,27 @@ import Image from "next/image";
 import { Track } from "@/lib/youtube";
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
-function formatTime(s: number) {
-    if (!s || isNaN(s) || s <= 0) return "";
-    const m = Math.floor(s / 60000);
-    const sec = String(Math.floor((s % 60000) / 1000)).padStart(2, "0");
+function formatTime(ms: number) {
+    if (!ms || isNaN(ms) || ms <= 0) return "";
+    const m = Math.floor(ms / 60000);
+    const sec = String(Math.floor((ms % 60000) / 1000)).padStart(2, "0");
     return `${m}:${sec}`;
 }
 
+function formatMinutes(totalMs: number): string {
+    const min = Math.round(totalMs / 60000);
+    if (min < 1) return "< 1 мин";
+    return `~${min} мин`;
+}
+
 // ── Draggable user-queue row ───────────────────────────────────────────────────
-function QueueItem({
-    track,
-    index,
-    isCurrent,
-    onRemove,
-    onClick,
+function UserQueueItem({
+    track, index, isCurrent, onRemove, onClick, onPlayNext,
 }: {
-    track: Track;
-    index: number;
-    isCurrent: boolean;
+    track: Track; index: number; isCurrent: boolean;
     onRemove: (i: number) => void;
     onClick: (t: Track) => void;
+    onPlayNext?: (t: Track) => void;
 }) {
     return (
         <Reorder.Item
@@ -38,16 +42,12 @@ function QueueItem({
             as="div"
             className={cn(
                 "group flex items-center gap-3 px-3 py-2.5 mx-1 rounded-xl transition-all duration-150 cursor-grab active:cursor-grabbing select-none",
-                isCurrent
-                    ? "bg-white/10 border border-white/10"
-                    : "hover:bg-white/[0.06]"
+                isCurrent ? "bg-white/10 border border-white/10" : "hover:bg-white/[0.06]"
             )}
             whileDrag={{ scale: 1.02, opacity: 0.9, zIndex: 10 }}
         >
-            {/* drag handle */}
             <GripVertical className="w-3.5 h-3.5 text-white/15 group-hover:text-white/40 flex-shrink-0 transition-colors" />
 
-            {/* art */}
             <button
                 className="relative w-9 h-9 rounded-lg overflow-hidden flex-shrink-0 bg-white/5 hover:opacity-80 transition-opacity"
                 onClick={(e) => { e.stopPropagation(); onClick(track); }}
@@ -64,55 +64,50 @@ function QueueItem({
                 </div>
             </button>
 
-            {/* info */}
             <div className="flex flex-col min-w-0 flex-1" onClick={() => onClick(track)} role="button">
-                <span className={cn(
-                    "text-sm font-medium truncate leading-tight",
-                    isCurrent ? "text-white" : "text-white/75 group-hover:text-white/90"
-                )}>
+                <span className={cn("text-sm font-medium truncate leading-tight", isCurrent ? "text-white" : "text-white/75 group-hover:text-white/90")}>
                     {cleanTitle(track.title)}
                 </span>
                 <span className="text-[11px] text-white/30 truncate">{track.artist}</span>
             </div>
 
-            {/* duration */}
             {track.durationMs > 0 && (
-                <span className="text-[11px] text-white/25 tabular-nums flex-shrink-0">
-                    {formatTime(track.durationMs)}
-                </span>
+                <span className="text-[11px] text-white/25 tabular-nums flex-shrink-0">{formatTime(track.durationMs)}</span>
             )}
 
-            {/* remove */}
-            <button
-                onClick={(e) => { e.stopPropagation(); onRemove(index); }}
-                className="opacity-0 group-hover:opacity-100 p-1.5 rounded-lg hover:bg-red-500/15 text-white/30 hover:text-red-400 transition-all flex-shrink-0"
-            >
-                <Trash2 className="w-3 h-3" />
-            </button>
+            <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
+                {onPlayNext && index > 0 && (
+                    <button
+                        onClick={(e) => { e.stopPropagation(); onPlayNext(track); onRemove(index); }}
+                        title="Поставить следующим"
+                        className="p-1.5 rounded-lg hover:bg-white/10 text-white/25 hover:text-white/70 transition-all"
+                    >
+                        <SkipForward className="w-3 h-3" />
+                    </button>
+                )}
+                <button
+                    onClick={(e) => { e.stopPropagation(); onRemove(index); }}
+                    className="p-1.5 rounded-lg hover:bg-red-500/15 text-white/30 hover:text-red-400 transition-all"
+                >
+                    <Trash2 className="w-3 h-3" />
+                </button>
+            </div>
         </Reorder.Item>
     );
 }
 
-// ── Auto-queue row (clickable, animated for shuffle reorder) ─────────────────
+// ── Auto-queue row ─────────────────────────────────────────────────────────────
 function AutoQueueItem({
-    track,
-    number,
-    isCurrent,
-    isPast,
-    onClick,
+    track, number, isCurrent, onClick,
 }: {
-    track: Track;
-    number: number;
-    isCurrent?: boolean;
-    isPast?: boolean;
-    onClick: (t: Track) => void;
+    track: Track; number: number; isCurrent?: boolean; onClick: (t: Track) => void;
 }) {
     return (
         <motion.button
             layoutId={`aq-${track.id}`}
             layout
             initial={{ opacity: 0, y: 6 }}
-            animate={{ opacity: isPast ? 0.38 : 1, y: 0 }}
+            animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -6 }}
             transition={{ type: "spring", damping: 24, stiffness: 280, layout: { duration: 0.35 } }}
             className={`group w-full flex items-center gap-3 px-3 py-2 mx-1 rounded-xl transition-colors text-left ${
@@ -121,7 +116,6 @@ function AutoQueueItem({
             style={{ width: "calc(100% - 8px)" }}
             onClick={() => onClick(track)}
         >
-            {/* position number / indicator */}
             <span className="w-5 text-center text-[11px] tabular-nums flex-shrink-0">
                 {isCurrent ? (
                     <span className="inline-flex items-end gap-[2px] h-3 justify-center">
@@ -140,10 +134,7 @@ function AutoQueueItem({
                 )}
             </span>
 
-            {/* art */}
-            <div className={`relative w-8 h-8 rounded-lg overflow-hidden flex-shrink-0 bg-white/5 ${
-                isCurrent ? "ring-1 ring-violet-400/40" : ""
-            }`}>
+            <div className={`relative w-8 h-8 rounded-lg overflow-hidden flex-shrink-0 bg-white/5 ${isCurrent ? "ring-1 ring-violet-400/40" : ""}`}>
                 {track.albumImageUrl ? (
                     <Image src={track.albumImageUrl} alt="" fill className="object-cover" unoptimized />
                 ) : (
@@ -153,22 +144,13 @@ function AutoQueueItem({
                 )}
             </div>
 
-            {/* info */}
             <div className="flex flex-col min-w-0 flex-1">
                 <span className={`text-[13px] truncate leading-tight transition-colors ${
-                    isCurrent
-                        ? "text-white font-medium"
-                        : isPast
-                        ? "text-white/40"
-                        : "text-white/55 group-hover:text-white/80"
+                    isCurrent ? "text-white font-medium" : "text-white/55 group-hover:text-white/80"
                 }`}>
                     {cleanTitle(track.title)}
                 </span>
-                <span className={`text-[11px] truncate ${
-                    isPast ? "text-white/20" : "text-white/25"
-                }`}>
-                    {track.artist}
-                </span>
+                <span className="text-[11px] text-white/25 truncate">{track.artist}</span>
             </div>
 
             {track.durationMs > 0 && (
@@ -178,12 +160,36 @@ function AutoQueueItem({
     );
 }
 
+// ── History row ────────────────────────────────────────────────────────────────
+function HistoryItem({ track, onClick }: { track: Track; onClick: (t: Track) => void }) {
+    return (
+        <button
+            onClick={() => onClick(track)}
+            className="group w-full flex items-center gap-3 px-3 py-2 mx-1 rounded-xl hover:bg-white/[0.04] transition-colors text-left"
+            style={{ width: "calc(100% - 8px)" }}
+        >
+            <div className="relative w-7 h-7 rounded-md overflow-hidden flex-shrink-0 bg-white/5 opacity-60 group-hover:opacity-100 transition-opacity">
+                {track.albumImageUrl ? (
+                    <Image src={track.albumImageUrl} alt="" fill className="object-cover" unoptimized />
+                ) : (
+                    <div className="w-full h-full flex items-center justify-center">
+                        <Music2 className="w-2.5 h-2.5 text-white/15" />
+                    </div>
+                )}
+            </div>
+            <div className="flex flex-col min-w-0 flex-1">
+                <span className="text-[12px] text-white/35 truncate group-hover:text-white/60 transition-colors">{cleanTitle(track.title)}</span>
+                <span className="text-[10px] text-white/20 truncate">{track.artist}</span>
+            </div>
+        </button>
+    );
+}
+
 // ── "Now playing" mini card ────────────────────────────────────────────────────
 function NowPlayingCard({ track }: { track: Track }) {
     return (
         <div className="mx-3 mb-1 rounded-xl overflow-hidden relative flex items-center gap-3 p-3 border border-white/10"
             style={{ background: "rgba(255,255,255,0.05)" }}>
-            {/* blurred art behind */}
             {track.albumImageUrl && (
                 <Image
                     src={track.albumImageUrl}
@@ -205,7 +211,6 @@ function NowPlayingCard({ track }: { track: Track }) {
                 <span className="text-sm font-semibold truncate text-white leading-tight">{cleanTitle(track.title)}</span>
                 <span className="text-xs text-white/45 truncate">{track.artist}</span>
             </div>
-            {/* waveform animation */}
             <div className="relative flex items-end gap-[2px] h-4 flex-shrink-0">
                 {[1, 0.6, 0.85, 0.45, 1].map((h, i) => (
                     <motion.div
@@ -222,12 +227,17 @@ function NowPlayingCard({ track }: { track: Track }) {
 }
 
 // ── Section label ──────────────────────────────────────────────────────────────
-function SectionLabel({ children, count }: { children: React.ReactNode; count?: number }) {
+function SectionLabel({ children, count, time }: { children: React.ReactNode; count?: number; time?: string }) {
     return (
         <div className="flex items-center gap-2 px-4 pt-4 pb-1.5">
             <span className="text-[10px] font-bold uppercase tracking-[0.15em] text-white/25">{children}</span>
             {count !== undefined && count > 0 && (
                 <span className="text-[10px] text-white/20 bg-white/5 rounded-full px-1.5">{count}</span>
+            )}
+            {time && (
+                <span className="flex items-center gap-1 text-[10px] text-white/15">
+                    <Clock className="w-2.5 h-2.5" />{time}
+                </span>
             )}
             <div className="flex-1 h-px bg-white/[0.05]" />
         </div>
@@ -241,16 +251,23 @@ export function QueuePanel() {
         currentTrack,
         userQueue,
         queue,
+        history,
+        queueSource,
         removeFromQueue,
         reorderQueue,
         clearUserQueue,
         playTrack,
+        playNext,
         shuffle,
         repeatMode,
         toggleShuffle,
         cycleRepeat,
+        autoplayEnabled,
+        toggleAutoplay,
+        isLoadingRadio,
     } = usePlayerStore();
 
+    const [showHistory, setShowHistory] = useState(false);
     const panelRef = useRef<HTMLDivElement>(null);
 
     const handleReorder = useCallback(
@@ -265,15 +282,21 @@ export function QueuePanel() {
     );
 
     const handlePlay = useCallback(
-        (track: Track) => playTrack(track, queue),
-        [playTrack, queue]
+        (track: Track) => playTrack(track, queue, queueSource ?? undefined),
+        [playTrack, queue, queueSource]
     );
 
-    // Full queue: shown together as one list, current track highlighted
-    const currentIdx = currentTrack ? queue.findIndex(t => t.id === currentTrack.id) : -1;
+    const handlePlayFromHistory = useCallback(
+        (track: Track) => playTrack(track),
+        [playTrack]
+    );
 
-    const isEmpty = userQueue.length === 0 && queue.length === 0;
-    const totalNext = userQueue.length + queue.length;
+    // Filter queue: only show upcoming (after current track)
+    const currentIdx = currentTrack ? queue.findIndex(t => t.id === currentTrack.id) : -1;
+    const upcomingQueue = currentIdx >= 0 ? queue.slice(currentIdx + 1) : queue;
+    const upcomingTimeMs = upcomingQueue.reduce((s, t) => s + (t.durationMs ?? 0), 0);
+
+    const isEmpty = userQueue.length === 0 && upcomingQueue.length === 0 && !currentTrack;
 
     const RepeatIcon = repeatMode === "one" ? Repeat1 : Repeat;
 
@@ -281,7 +304,6 @@ export function QueuePanel() {
         <AnimatePresence>
             {isQueueOpen && (
                 <>
-                    {/* Backdrop — transparent to allow clicking through */}
                     <motion.div
                         key="backdrop"
                         initial={{ opacity: 0 }}
@@ -291,7 +313,6 @@ export function QueuePanel() {
                         className="fixed inset-0 z-[110]"
                     />
 
-                    {/* Panel */}
                     <motion.div
                         key="panel"
                         ref={panelRef}
@@ -304,7 +325,7 @@ export function QueuePanel() {
                             background: "rgba(9,9,12,0.97)",
                             backdropFilter: "blur(48px)",
                             boxShadow: "0 32px 80px rgba(0,0,0,0.8), 0 0 0 1px rgba(255,255,255,0.04)",
-                            maxHeight: "72vh",
+                            maxHeight: "75vh",
                         }}
                         onClick={(e) => e.stopPropagation()}
                     >
@@ -313,22 +334,26 @@ export function QueuePanel() {
                             <div className="flex items-center gap-2.5">
                                 <ListMusic className="w-3.5 h-3.5 text-white/40" />
                                 <span className="text-sm font-semibold text-white/90 tracking-tight">Очередь</span>
-                                {totalNext > 0 && (
-                                    <span className="text-[11px] text-white/25 bg-white/[0.07] rounded-full px-2 py-0.5 tabular-nums">
-                                        {totalNext}
-                                    </span>
-                                )}
                             </div>
-                            <div className="flex items-center gap-1">
+                            <div className="flex items-center gap-0.5">
+                                {/* Autoplay toggle */}
+                                <button
+                                    onClick={toggleAutoplay}
+                                    title={autoplayEnabled ? "Радио включено" : "Радио выключено"}
+                                    className={cn(
+                                        "p-1.5 rounded-lg transition-all",
+                                        autoplayEnabled ? "text-violet-400 bg-violet-500/15" : "text-white/25 hover:text-white/60 hover:bg-white/5"
+                                    )}
+                                >
+                                    <Radio className="w-3.5 h-3.5" />
+                                </button>
+
                                 {/* Shuffle */}
                                 <button
                                     onClick={toggleShuffle}
-                                    title="Перемешать"
                                     className={cn(
                                         "p-1.5 rounded-lg transition-all",
-                                        shuffle
-                                            ? "text-violet-400 bg-violet-500/15"
-                                            : "text-white/25 hover:text-white/60 hover:bg-white/5"
+                                        shuffle ? "text-violet-400 bg-violet-500/15" : "text-white/25 hover:text-white/60 hover:bg-white/5"
                                     )}
                                 >
                                     <Shuffle className="w-3.5 h-3.5" />
@@ -337,31 +362,26 @@ export function QueuePanel() {
                                 {/* Repeat */}
                                 <button
                                     onClick={cycleRepeat}
-                                    title={repeatMode === "none" ? "Повтор выкл" : repeatMode === "all" ? "Повтор всех" : "Повтор трека"}
                                     className={cn(
                                         "p-1.5 rounded-lg transition-all",
-                                        repeatMode !== "none"
-                                            ? "text-violet-400 bg-violet-500/15"
-                                            : "text-white/25 hover:text-white/60 hover:bg-white/5"
+                                        repeatMode !== "none" ? "text-violet-400 bg-violet-500/15" : "text-white/25 hover:text-white/60 hover:bg-white/5"
                                     )}
                                 >
                                     <RepeatIcon className="w-3.5 h-3.5" />
                                 </button>
 
-                                {/* Clear user queue */}
                                 {userQueue.length > 0 && (
                                     <button
                                         onClick={clearUserQueue}
-                                        className="text-[11px] text-white/25 hover:text-red-400 transition-colors px-2 py-1 rounded-lg hover:bg-red-500/10 ml-1"
+                                        className="text-[11px] text-white/25 hover:text-red-400 transition-colors px-2 py-1 rounded-lg hover:bg-red-500/10 ml-0.5"
                                     >
                                         Очистить
                                     </button>
                                 )}
 
-                                {/* Close */}
                                 <button
                                     onClick={() => setQueueOpen(false)}
-                                    className="p-1.5 rounded-lg hover:bg-white/8 text-white/30 hover:text-white/70 transition-all"
+                                    className="p-1.5 rounded-lg hover:bg-white/8 text-white/30 hover:text-white/70 transition-all ml-0.5"
                                 >
                                     <X className="w-3.5 h-3.5" />
                                 </button>
@@ -379,7 +399,7 @@ export function QueuePanel() {
                                 </>
                             )}
 
-                            {/* User queue (draggable) */}
+                            {/* User queue */}
                             {userQueue.length > 0 && (
                                 <>
                                     <SectionLabel count={userQueue.length}>Далее в очереди</SectionLabel>
@@ -392,13 +412,14 @@ export function QueuePanel() {
                                     >
                                         <AnimatePresence initial={false}>
                                             {userQueue.map((track, i) => (
-                                                <QueueItem
+                                                <UserQueueItem
                                                     key={track.id}
                                                     track={track}
                                                     index={i}
                                                     isCurrent={false}
                                                     onRemove={removeFromQueue}
                                                     onClick={handlePlay}
+                                                    onPlayNext={playNext}
                                                 />
                                             ))}
                                         </AnimatePresence>
@@ -406,20 +427,24 @@ export function QueuePanel() {
                                 </>
                             )}
 
-                            {/* Full context queue — one list, layout-animated for shuffle */}
-                            {queue.length > 0 && (
+                            {/* Auto queue — only upcoming tracks */}
+                            {upcomingQueue.length > 0 && (
                                 <>
-                                    <SectionLabel count={queue.length}>Плейлист</SectionLabel>
+                                    <SectionLabel
+                                        count={upcomingQueue.length}
+                                        time={upcomingTimeMs > 0 ? formatMinutes(upcomingTimeMs) : undefined}
+                                    >
+                                        {queueSource ?? "Далее"}
+                                    </SectionLabel>
                                     <LayoutGroup id="ctx-queue">
                                         <div className="flex flex-col gap-0.5">
                                             <AnimatePresence initial={false}>
-                                                {queue.map((track, i) => (
+                                                {upcomingQueue.map((track, i) => (
                                                     <AutoQueueItem
                                                         key={track.id}
                                                         track={track}
                                                         number={i + 1}
-                                                        isCurrent={track.id === currentTrack?.id}
-                                                        isPast={currentIdx > 0 && i < currentIdx}
+                                                        isCurrent={false}
                                                         onClick={handlePlay}
                                                     />
                                                 ))}
@@ -429,12 +454,20 @@ export function QueuePanel() {
                                 </>
                             )}
 
-                            {/* Empty State */}
-                            {isEmpty && (
+                            {/* Radio loading indicator */}
+                            {isLoadingRadio && (
+                                <div className="flex items-center gap-2.5 px-4 py-4 text-white/30">
+                                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                    <span className="text-[12px]">Подбираем похожие треки…</span>
+                                </div>
+                            )}
+
+                            {/* Empty state */}
+                            {isEmpty && !isLoadingRadio && (
                                 <motion.div
                                     initial={{ opacity: 0, y: 8 }}
                                     animate={{ opacity: 1, y: 0 }}
-                                    className="flex flex-col items-center justify-center py-14 text-center gap-3"
+                                    className="flex flex-col items-center justify-center py-12 text-center gap-3"
                                 >
                                     <div className="w-14 h-14 rounded-2xl bg-white/[0.04] border border-white/[0.06] flex items-center justify-center">
                                         <Music2 className="w-6 h-6 text-white/15" />
@@ -447,11 +480,51 @@ export function QueuePanel() {
                                     </div>
                                 </motion.div>
                             )}
+
+                            {/* History section */}
+                            {history.length > 0 && (
+                                <>
+                                    <button
+                                        onClick={() => setShowHistory(p => !p)}
+                                        className="flex items-center gap-2 px-4 pt-4 pb-2 w-full group"
+                                    >
+                                        <History className="w-3 h-3 text-white/20 group-hover:text-white/40 transition-colors" />
+                                        <span className="text-[10px] font-bold uppercase tracking-[0.15em] text-white/20 group-hover:text-white/35 transition-colors">
+                                            История · {history.length}
+                                        </span>
+                                        <div className="flex-1 h-px bg-white/[0.04]" />
+                                        <ChevronDown className={cn(
+                                            "w-3 h-3 text-white/20 transition-transform",
+                                            showHistory && "rotate-180"
+                                        )} />
+                                    </button>
+
+                                    <AnimatePresence>
+                                        {showHistory && (
+                                            <motion.div
+                                                initial={{ opacity: 0, height: 0 }}
+                                                animate={{ opacity: 1, height: "auto" }}
+                                                exit={{ opacity: 0, height: 0 }}
+                                                className="overflow-hidden"
+                                            >
+                                                <div className="flex flex-col gap-0.5 py-1">
+                                                    {history.slice(0, 10).map((track) => (
+                                                        <HistoryItem
+                                                            key={`hist-${track.id}`}
+                                                            track={track}
+                                                            onClick={handlePlayFromHistory}
+                                                        />
+                                                    ))}
+                                                </div>
+                                            </motion.div>
+                                        )}
+                                    </AnimatePresence>
+                                </>
+                            )}
                         </div>
                     </motion.div>
                 </>
             )}
         </AnimatePresence>
-
     );
 }
