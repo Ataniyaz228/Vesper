@@ -386,8 +386,7 @@ export default function MyPlaylistPage() {
                             src={coverUrl}
                             alt=""
                             fill
-                            className="object-cover opacity-40"
-                            style={{ objectPosition: "center 30%" }}
+                            className="object-cover opacity-50 blur-[60px] scale-125"
                             unoptimized
                         />
                     ) : (
