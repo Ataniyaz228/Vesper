@@ -2,25 +2,7 @@ import { NextResponse } from "next/server";
 import { getSessionUser } from "@/lib/auth";
 import { query } from "@/lib/db";
 
-/** Ensure the tables exist (idempotent migration) */
-async function ensureTables() {
-    await query(`
-        CREATE TABLE IF NOT EXISTS user_playlists (
-            id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-            user_id TEXT NOT NULL,
-            title TEXT NOT NULL DEFAULT 'Новый плейлист',
-            created_at TIMESTAMPTZ DEFAULT now()
-        );
-        CREATE TABLE IF NOT EXISTS user_playlist_tracks (
-            playlist_id UUID REFERENCES user_playlists(id) ON DELETE CASCADE,
-            track_id TEXT NOT NULL,
-            track_data JSONB NOT NULL,
-            position INTEGER NOT NULL DEFAULT 0,
-            added_at TIMESTAMPTZ DEFAULT now(),
-            PRIMARY KEY (playlist_id, track_id)
-        );
-    `, []);
-}
+
 
 // GET /api/playlists — list user's playlists with basic track count
 export async function GET() {
@@ -28,7 +10,6 @@ export async function GET() {
     if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     try {
-        await ensureTables();
 
         const playlists = await query(`
             SELECT p.id, p.title, p.created_at as "createdAt",
@@ -60,7 +41,6 @@ export async function POST(req: Request) {
     if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     try {
-        await ensureTables();
         const body = await req.json();
         const title = (body?.title as string)?.trim() || "Новый плейлист";
 

@@ -65,10 +65,10 @@ function MobileHero() {
 // Right editorial panel — desktop only
 // ─────────────────────────────────────────────────────────────────────────────
 const FEATURES = [
-    { icon: Music,      label: "2.4M+ tracks",    sub: "From across the globe" },
-    { icon: Headphones, label: "Spatial audio",    sub: "Immersive listening" },
-    { icon: Zap,        label: "Zero buffering",   sub: "Stream-optimised CDN" },
-    { icon: Globe,      label: "Offline playback", sub: "Take it anywhere" },
+    { icon: Music, label: "2.4M+ tracks", sub: "From across the globe" },
+    { icon: Headphones, label: "Spatial audio", sub: "Immersive listening" },
+    { icon: Zap, label: "Zero buffering", sub: "Stream-optimised CDN" },
+    { icon: Globe, label: "Offline playback", sub: "Take it anywhere" },
 ];
 
 function RightPanel() {
@@ -104,7 +104,7 @@ function RightPanel() {
                                     <div className="text-[11px] text-white/30 mt-0.5">{sub}</div>
                                 </div>
                             </motion.div>
-                        ))}
+                        ))}фильтрации: chips в hero — фильтруют треки на месте (client-side, мгновенно), клик по genre card — переход
                     </div>
                 </motion.div>
                 <motion.div variants={itemVariants} className="mt-10">

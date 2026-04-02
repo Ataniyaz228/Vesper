@@ -10,6 +10,7 @@ import { FastAverageColor } from "fast-average-color";
 import { useLibraryStore } from "@/store/useLibraryStore";
 import { AuraTrackImage } from "@/components/ui/AuraTrackImage";
 import { SynchronizedLyrics } from "./SynchronizedLyrics";
+import { SonicWaveformCanvas } from "@/components/ui/SonicWaveform";
 import { cn, cleanTitle } from "@/lib/utils";
 
 function formatTime(s: number) {
@@ -49,27 +50,26 @@ function useDominantColor(imageUrl?: string, isReady?: boolean): RGB {
     return color;
 }
 
-// 1. Ambient Mood (Optimized radial gradients)
-function AmbientBackground({ rgb, title }: { rgb: RGB, title: string }) {
-    const centerGlow = `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.35)`;
-    const edgeGlow = `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.12)`;
+// 1. Ambient Mood (Optimized radial gradients & Sonic Waveform)
+function AmbientBackground({ rgb, title, isPlaying }: { rgb: RGB, title: string, isPlaying: boolean }) {
+    const centerGlow = `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.25)`;
+    const edgeGlow = `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.08)`;
 
     return (
         <div className="absolute inset-0 z-0 overflow-hidden bg-[#040405] pointer-events-none">
+            {/* Background Base Radial Gradient for smooth lighting */}
             <motion.div
-                className="absolute rounded-full mix-blend-screen opacity-60"
+                className="absolute inset-0 mix-blend-screen opacity-50"
                 style={{
-                    width: "160vw", height: "160vw",
-                    top: "40%", left: "50%", x: "-50%", y: "-50%",
-                    background: `radial-gradient(circle at center, ${centerGlow} 0%, ${edgeGlow} 40%, transparent 70%)`,
-                    willChange: "transform"
+                    background: `radial-gradient(circle at center, ${centerGlow} 0%, ${edgeGlow} 50%, transparent 80%)`,
                 }}
-                animate={{ scale: [1, 1.05, 1] }}
-                transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
             />
 
+            {/* The beautiful generative sonic waveform */}
+            <SonicWaveformCanvas rgb={rgb} isPlaying={isPlaying} />
+
             {/* Giant Track Title Watermark */}
-            <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 flex flex-col items-center justify-center mix-blend-overlay opacity-[0.03] pointer-events-none">
+            <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 flex flex-col items-center justify-center mix-blend-overlay opacity-[0.04] pointer-events-none z-10">
                 <motion.h1
                     className="text-[18vw] font-black uppercase tracking-[-0.05em] leading-none select-none whitespace-nowrap text-white text-center"
                     initial={{ opacity: 0 }}
@@ -80,7 +80,7 @@ function AmbientBackground({ rgb, title }: { rgb: RGB, title: string }) {
                 </motion.h1>
             </div>
 
-            <div className="absolute inset-0 opacity-[0.05] mix-blend-overlay"
+            <div className="absolute inset-0 opacity-[0.05] mix-blend-overlay z-10"
                 style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")` }} />
         </div>
     );
@@ -145,7 +145,7 @@ export const FullScreenPlayer = () => {
                     className="fixed inset-0 z-[100] text-white overflow-hidden flex flex-col font-sans bg-[#040405]"
                     style={{ willChange: "transform", contain: "strict" }}
                 >
-                    <AmbientBackground rgb={dominantColorRGB} title={cleanTitle(currentTrack.title)} />
+                    <AmbientBackground rgb={dominantColorRGB} title={cleanTitle(currentTrack.title)} isPlaying={isPlaying} />
 
                     {/* 1. Header */}
                     <motion.div

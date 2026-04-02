@@ -40,3 +40,8 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 .env
+
+# Vesper specific
+lint2.txt
+lint_output.txt
+tmp/

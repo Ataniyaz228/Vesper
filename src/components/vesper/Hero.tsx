@@ -1,8 +1,13 @@
 import React from "react";
 import { motion, useScroll, useTransform } from "framer-motion";
 import { Disc3, Star, ArrowDown } from "lucide-react";
-import { AuraDNAVisualizer } from "@/components/ui/AuraDNAVisualizer";
 import { AURA_DATA, T, Rise, Label } from "@/components/vesper/Shared";
+import dynamic from "next/dynamic";
+
+const AuraDNAVisualizer = dynamic(
+    () => import("@/components/ui/AuraDNAVisualizer").then(mod => mod.AuraDNAVisualizer),
+    { ssr: false }
+);
 
 export function Hero({ d, dna }: {
     d: typeof AURA_DATA.identity & { lastResonated?: { title: string, artist: string } | null },

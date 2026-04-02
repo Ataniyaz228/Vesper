@@ -14,8 +14,9 @@ declare global {
 function createPool(): Pool {
     const pool = new Pool({
         connectionString: process.env.DATABASE_URL,
-        // Fail fast in dev if DB is not ready
-        connectionTimeoutMillis: 5000,
+        max: 2,
+        connectionTimeoutMillis: 10000,
+        ssl: process.env.NODE_ENV === "production" ? { rejectUnauthorized: false } : false,
     });
 
     pool.on("error", (err) => {

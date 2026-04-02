@@ -312,7 +312,8 @@ function TrackCard({ track, index, onClick }: { track: Track; index: number; onC
                 my.set((e.clientY - r.top) / r.height - 0.5);
             }}
             onMouseLeave={() => { mx.set(0); my.set(0); }}
-            className="cursor-pointer group"
+            onDragStart={(e) => e.preventDefault()}
+            className="cursor-pointer group select-none"
         >
             <div
                 className="relative overflow-hidden bg-[#0e0e0e]"
@@ -582,8 +583,8 @@ function HorizontalScroll({ children }: { children: React.ReactNode }) {
     return (
         <div
             ref={scrollRef}
-            className="flex gap-4 overflow-x-auto pb-6 scrollbar-hide snap-x snap-mandatory scroll-pl-6 sm:scroll-pl-10 lg:scroll-pl-16"
-            style={{ cursor: isDragging ? "grabbing" : "grab", scrollbarWidth: "none", msOverflowStyle: "none" }}
+            className={`flex gap-4 overflow-x-auto pb-4 scroll-pl-6 sm:scroll-pl-10 lg:scroll-pl-16 ${!isDragging ? "snap-x snap-mandatory" : ""}`}
+            style={{ cursor: isDragging ? "grabbing" : "grab" }}
             onMouseDown={(e) => {
                 setIsDragging(true);
                 setStartX(e.pageX - (scrollRef.current?.offsetLeft ?? 0));

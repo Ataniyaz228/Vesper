@@ -11,39 +11,15 @@ import { Pool } from "pg";
 async function migrate() {
   console.log("[migrate] Starting...");
 
-  // 1. Create database if it doesn't exist by connecting to default 'postgres' db
+  // Connect to the actual database
   const connectionString = process.env.DATABASE_URL;
   if (!connectionString) {
     throw new Error("DATABASE_URL is missing in environment variables.");
   }
-
-  const match = connectionString.match(/^(postgresql:\/\/[^:]+:[^@]+@[^:]+:\d+\/)([^?]+)/);
-  if (match) {
-    const baseUri = match[1];
-    const dbName = match[2];
-
-    // Connect to the default 'postgres' database
-    const tempPool = new Pool({ connectionString: `${baseUri}postgres` });
-    try {
-      const res = await tempPool.query(
-        "SELECT 1 FROM pg_database WHERE datname = $1",
-        [dbName]
-      );
-      if (res.rowCount === 0) {
-        console.log(`[migrate] Database '${dbName}' does not exist. Creating it...`);
-        // CREATE DATABASE cannot run securely with parameterized queries
-        await tempPool.query(`CREATE DATABASE "${dbName}"`);
-        console.log(`[migrate] Database '${dbName}' created.`);
-      }
-    } catch (e: unknown) {
-      console.warn("[migrate] Could not ensure database exists:", e);
-    } finally {
-      await tempPool.end();
-    }
-  }
-
-  // Connect to the actual database now that it's created
-  const pool = new Pool({ connectionString });
+  const pool = new Pool({ 
+    connectionString,
+    ssl: process.env.NODE_ENV === "production" ? { rejectUnauthorized: false } : false
+  });
 
   try {
     await pool.query(`
@@ -93,6 +69,22 @@ async function migrate() {
       );
 
       ALTER TABLE listening_history ADD COLUMN IF NOT EXISTS genre TEXT DEFAULT 'Unknown';
+      
+      CREATE TABLE IF NOT EXISTS user_playlists (
+          id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+          user_id TEXT NOT NULL,
+          title TEXT NOT NULL DEFAULT 'Новый плейлист',
+          created_at TIMESTAMPTZ DEFAULT now()
+      );
+      
+      CREATE TABLE IF NOT EXISTS user_playlist_tracks (
+          playlist_id UUID REFERENCES user_playlists(id) ON DELETE CASCADE,
+          track_id TEXT NOT NULL,
+          track_data JSONB NOT NULL,
+          position INTEGER NOT NULL DEFAULT 0,
+          added_at TIMESTAMPTZ DEFAULT now(),
+          PRIMARY KEY (playlist_id, track_id)
+      );
     `);
 
     // Auto-update updated_at on row change
