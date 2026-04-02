@@ -16,6 +16,7 @@ import { usePlaylistsStore } from "@/store/usePlaylistsStore";
 import { usePlayerStore } from "@/store/usePlayerStore";
 import { useLibraryStore } from "@/store/useLibraryStore";
 import { AddToPlaylistPicker } from "@/components/playlists/AddToPlaylistPicker";
+import { PlaylistOptionsMenu } from "@/components/playlists/PlaylistOptionsMenu";
 import { Track } from "@/lib/youtube";
 import { cn, cleanTitle } from "@/lib/utils";
 import { NOISE_URL as NOISE } from "@/lib/constants";
@@ -264,7 +265,7 @@ export default function MyPlaylistPage() {
     const id = params.id as string;
     const router = useRouter();
 
-    const { playlists, fetchPlaylist, renamePlaylist } = usePlaylistsStore();
+    const { playlists, fetchPlaylist, renamePlaylist, deletePlaylist } = usePlaylistsStore();
     const { playTrack, currentTrack, isPlaying, isLoading, togglePlay } = usePlayerStore();
 
     const playlist = playlists.find(p => p.id === id);
@@ -307,6 +308,11 @@ export default function MyPlaylistPage() {
         usePlayerStore.setState({ userQueue: shuffled.slice(1) });
         playTrack(shuffled[0]);
     }, [tracks, playTrack]);
+
+    const handleDeletePlaylist = useCallback(async () => {
+        await deletePlaylist(id);
+        router.push("/library"); // Proceed back to library after deletion
+    }, [id, deletePlaylist, router]);
 
     const isCurrentPlaylistActive = tracks.some(t => t.id === currentTrack?.id);
     const totalDurationMs = tracks.reduce((s, t) => s + (t.durationMs ?? 0), 0);
@@ -502,10 +508,19 @@ export default function MyPlaylistPage() {
                     disabled={tracks.length === 0}
                     whileHover={{ scale: 1.08 }}
                     whileTap={{ scale: 0.92 }}
-                    className="w-11 h-11 rounded-full border border-white/[0.08] bg-white/[0.04] hover:bg-white/[0.07] flex items-center justify-center transition-all disabled:opacity-40 backdrop-blur-xl"
+                    className="w-11 h-11 rounded-full border border-white/[0.08] bg-white/[0.04] hover:bg-white/[0.07] flex items-center justify-center transition-all disabled:opacity-40 backdrop-blur-xl flex-shrink-0"
                 >
                     <Shuffle className="w-4 h-4 text-white/50" />
                 </motion.button>
+                
+                {playlist && (
+                    <PlaylistOptionsMenu
+                        playlistId={id}
+                        playlistTitle={playlist.title}
+                        onRenameClick={() => setIsRenaming(true)}
+                        onDeleteConfirm={handleDeletePlaylist}
+                    />
+                )}
             </div>
 
             {/* ══════ TRACK LIST (draggable) ══════ */}
