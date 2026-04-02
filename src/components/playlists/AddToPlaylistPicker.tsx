@@ -41,13 +41,24 @@ export function AddToPlaylistPicker({ track, open, onClose, anchorRect }: AddToP
         setCreating(false);
     };
 
-    const style: React.CSSProperties = anchorRect
-        ? {
+    let style: React.CSSProperties = {};
+    let isReversed = false;
+
+    if (anchorRect && typeof window !== "undefined") {
+        const spaceBelow = window.innerHeight - anchorRect.bottom;
+        isReversed = spaceBelow < 320; // If less than 320px below, open upwards
+        
+        style = {
             position: "fixed",
-            left: Math.min(anchorRect.left, window.innerWidth - 268),
-            top: anchorRect.bottom + 8,
+            left: Math.min(anchorRect.left - 120, window.innerWidth - 268),
+        };
+
+        if (isReversed) {
+            style.bottom = window.innerHeight - anchorRect.top + 8;
+        } else {
+            style.top = anchorRect.bottom + 8;
         }
-        : {};
+    }
 
     // Render in portal to escape CSS transform contexts (like Framer Motion Reorder.Item)
     const [mounted, setMounted] = useState(false);
@@ -64,14 +75,15 @@ export function AddToPlaylistPicker({ track, open, onClose, anchorRect }: AddToP
 
                     {/* Dropdown */}
                     <motion.div
-                        initial={{ opacity: 0, scale: 0.92, y: -6 }}
+                        initial={{ opacity: 0, scale: 0.92, y: isReversed ? 6 : -6 }}
                         animate={{ opacity: 1, scale: 1, y: 0 }}
-                        exit={{ opacity: 0, scale: 0.92, y: -6 }}
+                        exit={{ opacity: 0, scale: 0.92, y: isReversed ? 6 : -6 }}
                         transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
                         className="z-[201] w-64 rounded-2xl overflow-hidden border border-white/[0.07]"
                         onClick={(e) => e.stopPropagation()}
                         style={{
                             ...style,
+                            transformOrigin: isReversed ? "bottom center" : "top center",
                             background: "rgba(11,11,17,0.98)",
                             backdropFilter: "blur(40px)",
                             boxShadow: "0 24px 64px rgba(0,0,0,0.75), 0 0 0 1px rgba(255,255,255,0.04)",
