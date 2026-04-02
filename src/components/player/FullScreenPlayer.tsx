@@ -175,33 +175,37 @@ export const FullScreenPlayer = () => {
                     </motion.div>
 
                     {/* 2. Content — Cover + Title centrally placed */}
-                    <div className="relative flex-1 min-h-0 w-full flex items-center justify-center overflow-hidden">
+                    <div className="relative flex-1 min-h-0 w-full flex flex-col md:flex-row items-center justify-center overflow-visible">
                         {/* Left panel — Cover art */}
                         <motion.div
                             animate={{
-                                width: showLyrics ? "42%" : "100%",
+                                width: showLyrics ? "100%" : "100%",
                                 opacity: 1,
                             }}
                             transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-                            className="h-full flex flex-col items-center justify-center shrink-0 origin-center relative will-change-[width] gap-3 py-2 px-6 md:px-12 overflow-hidden"
+                            className={cn(
+                                "flex flex-col items-center justify-center shrink-0 origin-center relative will-change-[width] gap-2 md:gap-3 py-2 px-6 md:px-12",
+                                showLyrics ? "h-auto md:h-full md:!w-[42%]" : "h-full"
+                            )}
                         >
                             {/* Album Cover */}
                             <motion.div
                                 layout
                                 initial={false}
                                 animate={{
-                                    scale: showLyrics ? 0.88 : 1.02,
-                                    rotate: showLyrics ? -1.5 : 0,
-                                    y: showLyrics ? 0 : -4
+                                    scale: 1.02,
+                                    rotate: 0,
+                                    y: -4
                                 }}
                                 transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
                                 className={cn(
-                                    "relative aspect-square shrink-0 rounded-[48px] overflow-hidden shadow-2xl",
-                                    "ring-1 ring-white/10 bg-[#0a0a0b]"
+                                    "relative aspect-square shrink-0 rounded-[28px] md:rounded-[48px] overflow-hidden shadow-2xl transition-height duration-700",
+                                    "ring-1 ring-white/10 bg-[#0a0a0b]",
+                                    showLyrics 
+                                        ? "h-[clamp(110px,22vh,240px)] md:h-[clamp(180px,45vh,520px)]" 
+                                        : "h-[clamp(160px,36vh,440px)] md:h-[clamp(180px,45vh,520px)]"
                                 )}
                                 style={{
-                                    // clamp: never smaller than 160px, max 40% of viewport, cap at 440px
-                                    height: "clamp(160px, 40vh, 440px)",
                                     boxShadow: showLyrics
                                         ? `0 20px 50px -10px rgba(0,0,0,0.5), 0 0 30px rgba(${dominantColorRGB.r},${dominantColorRGB.g},${dominantColorRGB.b}, 0.15)`
                                         : `0 40px 100px -20px rgba(0,0,0,0.7), 0 16px 50px -8px rgba(${dominantColorRGB.r},${dominantColorRGB.g},${dominantColorRGB.b}, 0.3)`,
@@ -213,13 +217,9 @@ export const FullScreenPlayer = () => {
                                     fallbackUrl={currentTrack.albumImageUrl}
                                     className="w-full h-full object-cover select-none scale-[1.01]"
                                 />
-                                {/* 1. Premium Glass Material Overlay */}
                                 <div className="absolute inset-0 bg-gradient-to-br from-white/[0.1] via-transparent to-transparent pointer-events-none z-10" />
-                                {/* 2. Dynamic Border Highlight (Top Left) */}
-                                <div className="absolute inset-0 rounded-[48px] border border-white/[0.08] pointer-events-none z-20" />
-                                {/* 3. Vignette/Depth */}
+                                <div className="absolute inset-0 rounded-[28px] md:rounded-[48px] border border-white/[0.08] pointer-events-none z-20" />
                                 <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,rgba(255,255,255,0.05)_0%,transparent_50%)] pointer-events-none z-10" />
-                                {/* 4. Bottom Contrast Sink */}
                                 <div className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-black/20 to-transparent pointer-events-none z-10" />
                             </motion.div>
 
@@ -230,10 +230,10 @@ export const FullScreenPlayer = () => {
                                 transition={{ duration: 0.6, delay: 0.15, ease: [0.16, 1, 0.3, 1] }}
                                 className="flex flex-col items-center shrink-0 text-center px-4 max-w-lg w-full"
                             >
-                                <h2 className="text-lg sm:text-2xl md:text-3xl font-black tracking-tight leading-tight text-white line-clamp-2">
+                                <h2 className="text-base sm:text-xl md:text-3xl font-black tracking-tight leading-tight text-white line-clamp-1 md:line-clamp-2">
                                     {cleanTitle(currentTrack.title)}
                                 </h2>
-                                <p className="text-[11px] md:text-xs text-white/35 tracking-[0.2em] uppercase font-semibold mt-1.5">
+                                <p className="text-[10px] md:text-xs text-white/35 tracking-[0.2em] uppercase font-semibold mt-1">
                                     {currentTrack.artist}
                                 </p>
                             </motion.div>
@@ -242,13 +242,14 @@ export const FullScreenPlayer = () => {
                         {/* Right panel — Lyrics (slides in from the right) */}
                         <AnimatePresence>
                             {showLyrics && (
+                                <>
                                 <motion.div
                                     key="lyrics-panel"
                                     initial={{ opacity: 0, x: 40, width: "0%" }}
                                     animate={{ opacity: 1, x: 0, width: "60%" }}
                                     exit={{ opacity: 0, x: 40, width: "0%" }}
                                     transition={{ duration: 0.65, ease: [0.16, 1, 0.3, 1] }}
-                                    className="h-full relative shrink-0"
+                                    className="hidden md:block h-full relative shrink-0"
                                 >
                                     <SynchronizedLyrics
                                         title={cleanTitle(currentTrack.title)}
@@ -256,32 +257,124 @@ export const FullScreenPlayer = () => {
                                         className="w-full h-full"
                                     />
                                 </motion.div>
+                                {/* Mobile lyrics — full width below the cover */}
+                                <motion.div
+                                    key="lyrics-panel-mobile"
+                                    initial={{ opacity: 0, y: 20 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    exit={{ opacity: 0, y: 20 }}
+                                    transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+                                    className="md:hidden w-full flex-1 min-h-0 relative overflow-hidden"
+                                >
+                                    <SynchronizedLyrics
+                                        title={cleanTitle(currentTrack.title)}
+                                        artist={currentTrack.artist}
+                                        className="w-full h-full"
+                                    />
+                                </motion.div>
+                                </>
                             )}
                         </AnimatePresence>
                     </div>
 
-                    {/* 3. Footer */}
-                    <div className="relative z-30 w-full flex flex-col items-center gap-3 md:gap-5 shrink-0 pt-3 pb-4 md:pt-5 md:pb-8 px-5 md:px-8">
+                    {/* 3. Footer — compact on mobile, pill console on desktop */}
+                    <div className="relative z-30 w-full flex flex-col items-center shrink-0 px-4 md:px-8 pb-3 md:pb-8 pt-1 md:pt-5 gap-1 md:gap-5">
 
+                        {/* ── Mobile-only: stacked progress + controls ── */}
+                        <div className="md:hidden w-full flex flex-col gap-2 max-w-md mx-auto">
+                            {/* Progress */}
+                            <div className="flex flex-col gap-1.5 w-full bg-white/[0.04] border border-white/[0.06] rounded-2xl px-4 py-2.5">
+                                <div className="flex justify-between items-center font-mono text-[10px] tracking-widest text-white/25">
+                                    <span>{formatTime(progress)}</span>
+                                    <span>{formatTime(duration)}</span>
+                                </div>
+                                <div
+                                    className="relative h-5 flex items-center cursor-pointer"
+                                    ref={barRef}
+                                    onMouseDown={(e) => { setIsDrag(true); handleSeek(e); }}
+                                    onMouseMove={(e) => { if (isDrag) handleSeek(e); }}
+                                    onMouseUp={() => setIsDrag(false)}
+                                    onTouchStart={(e) => {
+                                        if (!barRef.current || !duration) return;
+                                        const r = barRef.current.getBoundingClientRect();
+                                        const touch = e.touches[0];
+                                        const val = Math.max(0, Math.min(1, (touch.clientX - r.left) / r.width));
+                                        seekTo(val * duration);
+                                    }}
+                                    onTouchMove={(e) => {
+                                        if (!barRef.current || !duration) return;
+                                        const r = barRef.current.getBoundingClientRect();
+                                        const touch = e.touches[0];
+                                        const val = Math.max(0, Math.min(1, (touch.clientX - r.left) / r.width));
+                                        seekTo(val * duration);
+                                    }}
+                                    style={{ touchAction: "none" }}
+                                >
+                                    <div className="absolute inset-x-0 h-[2px] bg-white/10 rounded-full overflow-hidden">
+                                        <div className="h-full bg-white/50" style={{ width: `${pct}%` }} />
+                                    </div>
+                                    <div
+                                        className="absolute h-3 w-3 bg-white rounded-full shadow-[0_0_8px_rgba(255,255,255,0.5)]"
+                                        style={{ left: `calc(${pct}% - 6px)` }}
+                                    />
+                                </div>
+                            </div>
 
-                        {/* Player Console */}
+                            {/* Controls */}
+                            <div className="flex items-center justify-center gap-5 py-1">
+                                <button onClick={prevTrack} className="text-white/30 hover:text-white transition-colors p-2">
+                                    <SkipBack className="w-5 h-5 fill-current" />
+                                </button>
+                                <button
+                                    onClick={togglePlay}
+                                    className="w-14 h-14 bg-white text-black rounded-full flex items-center justify-center hover:scale-105 active:scale-95 transition-all shadow-xl"
+                                >
+                                    {isPlaying ? <Pause className="w-6 h-6 fill-current" /> : <Play className="w-6 h-6 fill-current ml-1" />}
+                                </button>
+                                <button onClick={nextTrack} className="text-white/30 hover:text-white transition-colors p-2">
+                                    <SkipForward className="w-5 h-5 fill-current" />
+                                </button>
+                                <button
+                                    onClick={() => currentTrack && toggleLikeTrack(currentTrack)}
+                                    className="hover:scale-110 active:scale-90 transition-transform group p-2"
+                                >
+                                    <Heart
+                                        className={cn(
+                                            "w-5 h-5 transition-all duration-300",
+                                            liked ? "fill-[#f43f5e] text-[#f43f5e]" : "text-white/25"
+                                        )}
+                                    />
+                                </button>
+                                <button
+                                    onClick={(e) => { e.stopPropagation(); toggleQueue(); }}
+                                    className={cn(
+                                        "p-2 rounded-full transition-all",
+                                        isQueueOpen ? "bg-white/12 text-white" : "text-white/25"
+                                    )}
+                                >
+                                    <ListMusic className="w-5 h-5" />
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* ── Desktop: pill console (unchanged) ── */}
                         <motion.div
                             initial={{ opacity: 0, y: 30 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ duration: 0.8, delay: 0.35, ease: "easeOut" }}
-                            className="w-full max-w-4xl bg-white/[0.03] border border-white/[0.05] shadow-[0_32px_80px_rgba(0,0,0,0.4)] rounded-[24px] md:rounded-full px-6 py-3 md:px-10 md:py-3 flex flex-col md:flex-row items-center gap-6 md:gap-10"
+                            className="hidden md:flex w-full max-w-4xl bg-white/[0.03] border border-white/[0.05] shadow-[0_32px_80px_rgba(0,0,0,0.4)] rounded-full px-10 py-3 flex-row items-center gap-10"
                             style={{
                                 backdropFilter: isFullyVisible ? "blur(40px)" : "none",
                                 willChange: "transform, opacity"
                             }}
                         >
-                            <div className="flex items-center gap-6 md:gap-8 order-2 md:order-1">
+                            <div className="flex items-center gap-8 order-1">
                                 <button onClick={prevTrack} className="text-white/20 hover:text-white transition-colors">
                                     <SkipBack className="w-5 h-5 fill-current" />
                                 </button>
                                 <button
                                     onClick={togglePlay}
-                                    className="w-12 h-12 md:w-14 md:h-14 bg-white text-black rounded-full flex items-center justify-center hover:scale-105 active:scale-95 transition-all shadow-xl"
+                                    className="w-14 h-14 bg-white text-black rounded-full flex items-center justify-center hover:scale-105 active:scale-95 transition-all shadow-xl"
                                 >
                                     {isPlaying ? <Pause className="w-6 h-6 fill-current" /> : <Play className="w-6 h-6 fill-current ml-1" />}
                                 </button>
@@ -340,7 +433,7 @@ export const FullScreenPlayer = () => {
                                 )}
                             </div>
 
-                            <div className="flex flex-col gap-2 flex-1 w-full order-1 md:order-2">
+                            <div className="flex flex-col gap-2 flex-1 w-full order-2">
                                 <div className="flex justify-between items-center px-1 font-mono text-xs tracking-widest opacity-20">
                                     <span>{formatTime(progress)}</span>
                                     <span>{formatTime(duration)}</span>
@@ -368,7 +461,7 @@ export const FullScreenPlayer = () => {
                                 </div>
                             </div>
 
-                            <div className="hidden md:flex items-center gap-3 w-32 shrink-0 order-3 bg-white/[0.04] px-3 py-2 rounded-full border border-white/[0.08]">
+                            <div className="flex items-center gap-3 w-32 shrink-0 order-3 bg-white/[0.04] px-3 py-2 rounded-full border border-white/[0.08]">
                                 <button onClick={() => setVolume(volume === 0 ? 0.5 : 0)} className="text-white/40 hover:text-white transition-colors">
                                     {volume === 0 ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
                                 </button>

@@ -36,7 +36,7 @@ export function Hero({ d, dna }: {
             {/* Aura DNA background */}
             <motion.div
                 style={{ y, scale: dnaScale, opacity: dnaOpacity }}
-                className="absolute w-[800px] h-[800px] pointer-events-none z-0"
+                className="absolute w-[320px] h-[320px] md:w-[800px] md:h-[800px] pointer-events-none z-0"
             >
                 <AuraDNAVisualizer data={dna || AURA_DATA.genres} />
             </motion.div>
@@ -45,13 +45,13 @@ export function Hero({ d, dna }: {
             <motion.div
                 animate={{ scale: [1, 1.04, 1], opacity: [0.08, 0.14, 0.08] }}
                 transition={{ duration: 7, repeat: Infinity, ease: "easeInOut" }}
-                className="absolute w-[600px] h-[600px] rounded-full pointer-events-none"
+                className="absolute w-[280px] h-[280px] md:w-[600px] md:h-[600px] rounded-full pointer-events-none"
                 style={{ border: `1px solid ${T.dim}`, top: "50%", left: "50%", x: "-50%", y: "-50%" }}
             />
             <motion.div
                 animate={{ scale: [1.06, 1, 1.06], opacity: [0.05, 0.09, 0.05] }}
                 transition={{ duration: 10, repeat: Infinity, ease: "easeInOut" }}
-                className="absolute w-[900px] h-[900px] rounded-full pointer-events-none"
+                className="absolute w-[380px] h-[380px] md:w-[900px] md:h-[900px] rounded-full pointer-events-none"
                 style={{ border: `1px solid ${T.dim}`, top: "50%", left: "50%", x: "-50%", y: "-50%" }}
             />
 

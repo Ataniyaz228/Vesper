@@ -230,7 +230,7 @@ function HomeContent() {
             <Reveal delay={0.04}>
               <div className="pt-16 px-4 sm:px-6 lg:px-8">
                 <SectionHeader eyebrow="Vibe" title="Choose Your Mood" />
-                <div className="flex gap-3">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                   {MOODS.map((m) => (
                     <MoodPanel key={m.label} mood={m}
                       onClick={() => { setSearchOpen(true); setQuery(m.query); doSearch(m.query); }} />
@@ -243,7 +243,7 @@ function HomeContent() {
             <Reveal delay={0.04}>
               <div className="pt-16">
                 <SectionHeader eyebrow="Charts" title="Trending Right Now" />
-                <div className="mx-8 rounded-[22px] overflow-hidden border border-white/[0.04] backdrop-blur-2xl"
+                <div className="mx-4 sm:mx-8 rounded-[22px] overflow-hidden border border-white/[0.04] backdrop-blur-2xl"
                   style={{ background: "rgba(255,255,255,0.022)" }}>
                   {trending.length === 0 ? <div className="flex justify-center py-10"><Loader2 className="w-5 h-5 animate-spin text-white/20" /></div> : (
                     trending.map((t, i) => <ChartRow key={`${t.id}-${i}`} track={t} index={i} active={currentTrack?.id === t.id} onClick={() => playTrack(t, trending, "В тренде")} />)

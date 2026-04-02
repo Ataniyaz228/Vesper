@@ -81,7 +81,7 @@ function SplitHero({ track, allTracks }: { track: DiscoverTrack; allTracks: Trac
     const rY = useTransform(sx, [-0.5, 0.5], ["-12deg", "12deg"]);
 
     return (
-        <section className="relative w-full overflow-hidden" style={{ minHeight: "clamp(420px, 65vh, 640px)" }}>
+        <section className="relative w-full overflow-hidden" style={{ minHeight: "clamp(340px, 55vh, 640px)" }}>
             {/* Ambient background — subtle, not full-bleed like Home */}
             <motion.div
                 className="absolute inset-0 pointer-events-none"
@@ -97,7 +97,7 @@ function SplitHero({ track, allTracks }: { track: DiscoverTrack; allTracks: Trac
             <div className="absolute inset-0 opacity-[0.03] pointer-events-none mix-blend-overlay" style={{ backgroundImage: NOISE }} />
 
             {/* Content — split layout */}
-            <div className="relative z-10 flex flex-col lg:flex-row items-center gap-8 lg:gap-16 px-6 sm:px-10 lg:px-16 pt-12 pb-8 h-full"
+            <div className="relative z-10 flex flex-col lg:flex-row items-center gap-6 lg:gap-16 px-4 sm:px-10 lg:px-16 pt-8 sm:pt-12 pb-8 h-full"
                  style={{ minHeight: "inherit" }}>
 
                 {/* Left: Floating album art with 3D tilt */}
@@ -120,7 +120,7 @@ function SplitHero({ track, allTracks }: { track: DiscoverTrack; allTracks: Trac
                     <div
                         className="relative overflow-hidden"
                         style={{
-                            width: "clamp(240px, 28vw, 360px)",
+                            width: "clamp(180px, 28vw, 360px)",
                             aspectRatio: "1",
                             borderRadius: 24,
                             boxShadow: `
@@ -648,7 +648,7 @@ export function DiscoverClientView({ initialTracks }: { initialTracks: DiscoverT
                 transition={{ duration: 0.5, delay: 0.3, ease: EASE }}
                 whileHover={{ scale: 1.08 }}
                 whileTap={{ scale: 0.94 }}
-                className="fixed top-6 right-6 z-40 w-11 h-11 rounded-full border border-white/[0.1] flex items-center justify-center backdrop-blur-xl transition-colors hover:bg-white/[0.1]"
+                className="fixed top-6 right-6 z-40 w-11 h-11 rounded-full border border-white/[0.1] hidden md:flex items-center justify-center backdrop-blur-xl transition-colors hover:bg-white/[0.1]"
                 style={{ background: "rgba(255,255,255,0.06)" }}
             >
                 <Search className="w-4.5 h-4.5 text-white/50" />

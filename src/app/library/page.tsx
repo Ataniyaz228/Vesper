@@ -27,7 +27,7 @@ function CoverShowcase({ items }: { items: (Track | Playlist)[] }) {
     const images = items.slice(0, 3).map(i => ("imageUrl" in i ? i.imageUrl : i.albumImageUrl));
 
     return (
-        <div ref={ref} className="absolute top-0 right-0 w-1/2 h-full opacity-40 pointer-events-none perspective-[1000px] flex items-center justify-end pr-20 overflow-hidden hide-scrollbar">
+        <div ref={ref} className="absolute top-0 right-0 w-1/2 h-full opacity-40 pointer-events-none perspective-[1000px] hidden lg:flex items-center justify-end pr-20 overflow-hidden hide-scrollbar">
             {images[0] && (
                 <motion.div
                     className="absolute right-32 top-1/2 -translate-y-1/2 rounded-3xl overflow-hidden shadow-[0_40px_100px_rgba(0,0,0,0.8)] border border-white/5"
@@ -295,10 +295,10 @@ export default function LibraryPage() {
                     </motion.div>
                 </div>
             ) : (
-                <div className="w-full flex flex-col pt-32">
+                <div className="w-full flex flex-col pt-8 md:pt-32">
 
                     {/* ── TITANIC HERO HEADER ── */}
-                    <section className="relative px-8 lg:px-20 mb-32 h-[50vh] flex items-center">
+                    <section className="relative px-4 sm:px-8 lg:px-20 mb-16 md:mb-32 h-auto md:h-[50vh] flex items-center py-10 md:py-0">
                         <CoverShowcase items={[...savedPlaylists, ...likedTracks]} />
 
                         <div className="relative z-10 max-w-7xl mx-auto w-full">
@@ -308,7 +308,7 @@ export default function LibraryPage() {
                                     Your personal curation
                                 </span>
 
-                                <h1 className="flex flex-col text-[14vw] md:text-[10vw] uppercase font-black leading-[0.8] tracking-[-0.04em] mix-blend-difference z-20">
+                                <h1 className="flex flex-col text-[20vw] md:text-[10vw] uppercase font-black leading-[0.8] tracking-[-0.04em] mix-blend-difference z-20">
                                     <span className="text-transparent" style={{ WebkitTextStroke: "2px rgba(255,255,255,0.2)" }}>THE</span>
                                     <span className="text-white">VAULT</span>
                                 </h1>
@@ -318,7 +318,7 @@ export default function LibraryPage() {
 
                     {/* ── BENTO PLAYLISTS ── */}
                     {savedPlaylists.length > 0 && (
-                        <section className="px-8 lg:px-20 mb-32 mx-auto max-w-screen-2xl w-full">
+                        <section className="px-4 sm:px-8 lg:px-20 mb-16 md:mb-32 mx-auto max-w-screen-2xl w-full">
                             <div className="flex flex-col md:flex-row md:items-end justify-between gap-8 mb-12 border-b border-white/10 pb-8">
                                 <div className="flex items-center gap-6">
                                     <div className="relative">
