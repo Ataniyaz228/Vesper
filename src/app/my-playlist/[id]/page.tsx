@@ -2,10 +2,14 @@
 
 import React, { useEffect, useCallback, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { motion, AnimatePresence, useScroll, useTransform, useSpring } from "framer-motion";
+import {
+    motion, AnimatePresence,
+    useScroll, useTransform, useSpring,
+    Reorder, useDragControls,
+} from "framer-motion";
 import {
     ArrowLeft, Play, Pause, Shuffle, Trash2, Music2,
-    Clock, MoreHorizontal, Heart, ListPlus
+    Clock, Heart, ListPlus, GripVertical, PenLine, Check, X,
 } from "lucide-react";
 import Image from "next/image";
 import { usePlaylistsStore } from "@/store/usePlaylistsStore";
@@ -14,35 +18,76 @@ import { useLibraryStore } from "@/store/useLibraryStore";
 import { AddToPlaylistPicker } from "@/components/playlists/AddToPlaylistPicker";
 import { Track } from "@/lib/youtube";
 import { cn, cleanTitle } from "@/lib/utils";
-import { MiniWave } from "@/components/ui/MiniWave";
+import { NOISE_URL as NOISE } from "@/lib/constants";
+import { FastAverageColor } from "fast-average-color";
 
-// ── Animated bars (equalizer) ────────────────────────────────────────────
-function EqBars() {
-    return (
-        <div className="flex items-end gap-[2px] h-4 w-5">
-            {[0.6, 1, 0.8].map((d, i) => (
-                <motion.div
-                    key={i}
-                    className="w-[3px] rounded-sm bg-purple-400"
-                    animate={{ scaleY: [0.3, 1, 0.5, 0.85, 0.3] }}
-                    transition={{ repeat: Infinity, duration: 0.8, delay: i * 0.15, ease: "easeInOut" }}
-                    style={{ originY: 1, height: 14 }}
-                />
-            ))}
-        </div>
-    );
-}
+const EASE = [0.16, 1, 0.3, 1] as const;
 
-// ── Format duration ms → m:ss ────────────────────────────────────────────
+// ────────────────────────────────────────────────────────────────────────────
+// Helpers
+// ────────────────────────────────────────────────────────────────────────────
 function fmt(ms?: number) {
     if (!ms) return "—";
     const s = Math.floor(ms / 1000);
     return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
 }
 
-// ── Track row ────────────────────────────────────────────────────────────
+// Tiny animated equalizer bars (monochrome — no purple)
+function EqBars() {
+    return (
+        <div className="flex items-end gap-[2px] h-4 w-5">
+            {[4, 7, 5, 9, 4].map((h, i) => (
+                <motion.div
+                    key={i}
+                    className="w-[2px] rounded-full bg-white/60"
+                    animate={{ height: [h, h * 2.2, h * 0.8, h * 1.6, h] }}
+                    transition={{ duration: 0.85, repeat: Infinity, delay: i * 0.08, ease: "easeInOut" }}
+                />
+            ))}
+        </div>
+    );
+}
+
+// Dominant color from cover image
+type RGB = { r: number; g: number; b: number };
+function useDominantColor(url?: string | null): RGB {
+    const [color, setColor] = useState<RGB>({ r: 30, g: 20, b: 50 });
+    useEffect(() => {
+        if (!url) return;
+        const fac = new FastAverageColor();
+        const t = setTimeout(() => {
+            fac.getColorAsync(url, { algorithm: "dominant" })
+                .then(res => {
+                    const [r, g, b] = res.value;
+                    const br = (r * 299 + g * 587 + b * 114) / 1000;
+                    if (br < 30) setColor({ r: Math.min(255, r + 50), g: Math.min(255, g + 50), b: Math.min(255, b + 50) });
+                    else setColor({ r, g, b });
+                })
+                .catch(() => {});
+        }, 300);
+        return () => clearTimeout(t);
+    }, [url]);
+    return color;
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// Glassmorphism Stat Pill
+// ────────────────────────────────────────────────────────────────────────────
+function StatPill({ icon, label }: { icon: React.ReactNode; label: string }) {
+    return (
+        <div className="flex items-center gap-2 px-4 py-2 rounded-full border border-white/[0.07] backdrop-blur-xl"
+            style={{ background: "rgba(255,255,255,0.04)" }}>
+            <span className="text-white/30">{icon}</span>
+            <span className="text-xs font-semibold text-white/45 tracking-wide whitespace-nowrap">{label}</span>
+        </div>
+    );
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// Editorial Track Row (draggable via Framer Motion Reorder)
+// ────────────────────────────────────────────────────────────────────────────
 function TrackRow({
-    track, index, playlistId, onPlay, isCurrent, isPlaying
+    track, index, playlistId, onPlay, isCurrent, isPlaying,
 }: {
     track: Track; index: number; playlistId: string;
     onPlay: (t: Track) => void; isCurrent: boolean; isPlaying: boolean;
@@ -52,49 +97,69 @@ function TrackRow({
     const liked = isTrackLiked(track.id);
     const [pickerOpen, setPickerOpen] = useState(false);
     const [pickerAnchor, setPickerAnchor] = useState<DOMRect | undefined>();
+    const dragControls = useDragControls();
 
     return (
         <>
-            <motion.div
-                initial={{ opacity: 0, x: -16 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: Math.min(index * 0.025, 0.4), duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
-                onClick={() => onPlay(track)}
+            <Reorder.Item
+                value={track}
+                dragListener={false}
+                dragControls={dragControls}
+                as="div"
                 className={cn(
-                    "group relative flex items-center gap-4 px-4 py-3 rounded-2xl transition-all cursor-pointer",
+                    "group relative flex items-center gap-3 sm:gap-4 px-3 sm:px-5 py-3 rounded-2xl transition-colors duration-200 cursor-pointer select-none",
                     "border border-transparent",
                     isCurrent
-                        ? "bg-white/[0.07] border-white/[0.07]"
-                        : "hover:bg-white/[0.04] hover:border-white/[0.04]"
+                        ? "bg-white/[0.06] border-white/[0.06]"
+                        : "hover:bg-white/[0.035] hover:border-white/[0.04]"
                 )}
+                onClick={() => onPlay(track)}
+                whileDrag={{
+                    scale: 1.02,
+                    boxShadow: "0 20px 60px rgba(0,0,0,0.7)",
+                    zIndex: 50,
+                    backgroundColor: "rgba(255,255,255,0.07)",
+                }}
             >
-                {/* Glow on active */}
+                {/* Ambient glow for active track */}
                 {isCurrent && (
                     <motion.div
                         className="absolute inset-0 rounded-2xl pointer-events-none"
-                        style={{ background: "radial-gradient(ellipse at left, rgba(139,92,246,0.08) 0%, transparent 70%)" }}
+                        layoutId="active-track-glow"
+                        style={{
+                            background: "radial-gradient(ellipse at left, rgba(255,255,255,0.06) 0%, transparent 70%)",
+                        }}
                     />
                 )}
 
-                {/* Index / waveform */}
-                <div className="w-7 flex items-center justify-center flex-shrink-0 relative">
+                {/* Drag handle */}
+                <div
+                    className="hidden sm:flex items-center justify-center w-5 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity cursor-grab active:cursor-grabbing touch-none"
+                    onPointerDown={(e) => { e.stopPropagation(); dragControls.start(e); }}
+                    onClick={(e) => e.stopPropagation()}
+                >
+                    <GripVertical className="w-3.5 h-3.5 text-white/20" />
+                </div>
+
+                {/* Index / EqBars */}
+                <div className="w-6 flex items-center justify-center flex-shrink-0">
                     {isCurrent && isPlaying ? (
                         <EqBars />
                     ) : (
                         <>
                             <span className={cn(
-                                "text-xs tabular-nums font-semibold transition-all",
-                                isCurrent ? "text-purple-400" : "text-white/20 group-hover:hidden"
+                                "text-[11px] tabular-nums font-semibold transition-all group-hover:hidden",
+                                isCurrent ? "text-white/70" : "text-white/18"
                             )}>
                                 {String(index + 1).padStart(2, "0")}
                             </span>
-                            <Play className="w-4 h-4 text-white/70 absolute opacity-0 group-hover:opacity-100 transition-opacity hidden group-hover:block" />
+                            <Play className="w-3.5 h-3.5 text-white/60 hidden group-hover:block" />
                         </>
                     )}
                 </div>
 
-                {/* Thumb */}
-                <div className="relative w-11 h-11 rounded-xl overflow-hidden flex-shrink-0 bg-white/6 ring-1 ring-white/[0.06]">
+                {/* Thumbnail */}
+                <div className="relative w-11 h-11 rounded-xl overflow-hidden flex-shrink-0 ring-1 ring-white/[0.06] bg-white/[0.04]">
                     {track.albumImageUrl && (
                         <Image
                             src={track.albumImageUrl}
@@ -109,28 +174,28 @@ function TrackRow({
                 {/* Meta */}
                 <div className="flex-1 min-w-0">
                     <p className={cn(
-                        "text-sm font-semibold truncate transition-colors",
-                        isCurrent ? "text-purple-300" : "text-white/85 group-hover:text-white"
+                        "text-[13px] font-semibold truncate transition-colors",
+                        isCurrent ? "text-white" : "text-white/75 group-hover:text-white"
                     )}>
                         {cleanTitle(track.title)}
                     </p>
-                    <p className="text-xs text-white/35 truncate mt-0.5">{track.artist}</p>
+                    <p className="text-[11px] text-white/28 truncate mt-0.5">{track.artist}</p>
                 </div>
 
                 {/* Duration */}
-                <span className="text-xs text-white/25 tabular-nums hidden sm:block flex-shrink-0 font-mono">
+                <span className="text-[11px] text-white/20 tabular-nums hidden sm:block flex-shrink-0 font-mono">
                     {fmt(track.durationMs)}
                 </span>
 
-                {/* Action buttons — visible on hover */}
-                <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
+                {/* Actions — hover only */}
+                <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
                     <button
                         onClick={e => { e.stopPropagation(); toggleLikeTrack(track); }}
-                        className="p-1.5 rounded-lg hover:bg-white/8 transition-all"
+                        className="p-2 rounded-xl hover:bg-white/[0.06] transition-all"
                     >
                         <Heart className={cn(
                             "w-3.5 h-3.5 transition-colors",
-                            liked ? "fill-[#f43f5e] text-[#f43f5e]" : "text-white/30 hover:text-white/60"
+                            liked ? "fill-[#f43f5e] text-[#f43f5e]" : "text-white/25 hover:text-white/55"
                         )} />
                     </button>
                     <button
@@ -139,18 +204,18 @@ function TrackRow({
                             setPickerAnchor(e.currentTarget.getBoundingClientRect());
                             setPickerOpen(p => !p);
                         }}
-                        className="p-1.5 rounded-lg hover:bg-white/8 text-white/30 hover:text-white/60 transition-all"
+                        className="p-2 rounded-xl hover:bg-white/[0.06] text-white/25 hover:text-white/55 transition-all"
                     >
                         <ListPlus className="w-3.5 h-3.5" />
                     </button>
                     <button
                         onClick={e => { e.stopPropagation(); removeTrack(playlistId, track.id); }}
-                        className="p-1.5 rounded-lg hover:bg-rose-500/12 text-white/25 hover:text-rose-400 transition-all"
+                        className="p-2 rounded-xl hover:bg-rose-500/10 text-white/20 hover:text-rose-400/80 transition-all"
                     >
                         <Trash2 className="w-3.5 h-3.5" />
                     </button>
                 </div>
-            </motion.div>
+            </Reorder.Item>
 
             {pickerOpen && (
                 <AddToPlaylistPicker
@@ -164,29 +229,69 @@ function TrackRow({
     );
 }
 
-// ── Page ─────────────────────────────────────────────────────────────────
+// ────────────────────────────────────────────────────────────────────────────
+// Inline Rename Input
+// ────────────────────────────────────────────────────────────────────────────
+function RenameInput({ value, onSave, onCancel }: { value: string; onSave: (v: string) => void; onCancel: () => void }) {
+    const [val, setVal] = useState(value);
+    const ref = useRef<HTMLInputElement>(null);
+    useEffect(() => { ref.current?.focus(); ref.current?.select(); }, []);
+    return (
+        <form onSubmit={e => { e.preventDefault(); onSave(val.trim() || value); }} className="flex items-center gap-2">
+            <input
+                ref={ref}
+                value={val}
+                onChange={e => setVal(e.target.value)}
+                className="bg-transparent text-white font-black tracking-tight focus:outline-none border-b border-white/20 focus:border-white/50 transition-colors min-w-0"
+                style={{ fontSize: "clamp(22px, 4vw, 52px)" }}
+                onKeyDown={e => e.key === "Escape" && onCancel()}
+            />
+            <button type="submit" className="p-1.5 rounded-lg bg-white/10 hover:bg-white/20 transition-all flex-shrink-0">
+                <Check className="w-3.5 h-3.5 text-white/70" />
+            </button>
+            <button type="button" onClick={onCancel} className="p-1.5 rounded-lg hover:bg-white/10 transition-all flex-shrink-0">
+                <X className="w-3.5 h-3.5 text-white/40" />
+            </button>
+        </form>
+    );
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// Main Page
+// ────────────────────────────────────────────────────────────────────────────
 export default function MyPlaylistPage() {
     const params = useParams();
     const id = params.id as string;
     const router = useRouter();
 
-    const { playlists, fetchPlaylist } = usePlaylistsStore();
+    const { playlists, fetchPlaylist, renamePlaylist } = usePlaylistsStore();
     const { playTrack, currentTrack, isPlaying, isLoading, togglePlay } = usePlayerStore();
 
     const playlist = playlists.find(p => p.id === id);
-    const tracks = playlist?.tracks ?? [];
+    const [tracks, setTracks] = useState<Track[]>([]);
+
+    // Sync tracks from store
+    useEffect(() => { setTracks(playlist?.tracks ?? []); }, [playlist?.tracks]);
 
     const scrollRef = useRef<HTMLDivElement>(null);
     const { scrollYProgress } = useScroll({ container: scrollRef });
-    const heroOpacity = useTransform(scrollYProgress, [0, 0.2], [1, 0]);
-    const heroScale = useSpring(useTransform(scrollYProgress, [0, 0.2], [1, 1.08]), { stiffness: 80, damping: 20 });
-    const headerBg = useTransform(scrollYProgress, [0.12, 0.22], [0, 1]);
+    const heroOpacity = useTransform(scrollYProgress, [0, 0.18], [1, 0]);
+    const heroScale = useSpring(
+        useTransform(scrollYProgress, [0, 0.18], [1, 1.08]),
+        { stiffness: 80, damping: 20 }
+    );
+    const headerBg = useTransform(scrollYProgress, [0.1, 0.2], [0, 1]);
+    const floatPillShow = useTransform(scrollYProgress, [0.15, 0.22], [0, 1]);
+
+    const [isRenaming, setIsRenaming] = useState(false);
 
     useEffect(() => { fetchPlaylist(id); }, [id, fetchPlaylist]);
 
     const handlePlay = useCallback((track: Track, fromIndex?: number) => {
         const remaining = fromIndex !== undefined ? tracks.slice(fromIndex + 1) : [];
-        usePlayerStore.setState(s => ({ userQueue: [...remaining, ...s.userQueue.filter(t => !remaining.find(r => r.id === t.id))] }));
+        usePlayerStore.setState(s => ({
+            userQueue: [...remaining, ...s.userQueue.filter(t => !remaining.find(r => r.id === t.id))]
+        }));
         playTrack(track);
     }, [tracks, playTrack]);
 
@@ -207,33 +312,36 @@ export default function MyPlaylistPage() {
     const totalDurationMs = tracks.reduce((s, t) => s + (t.durationMs ?? 0), 0);
     const totalMin = Math.round(totalDurationMs / 60000);
 
-    // Derive cover from first track with art, or playlist coverUrl
     const coverUrl = playlist?.coverUrl ?? tracks.find(t => t.albumImageUrl)?.albumImageUrl;
+    const rgb = useDominantColor(coverUrl);
+    const accentColor = `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}`;
 
     return (
-        <div ref={scrollRef} className="relative h-full overflow-y-auto text-white">
+        <div ref={scrollRef} className="relative h-full overflow-y-auto text-white bg-[#080809]">
+
+            {/* Global noise */}
+            <div className="fixed inset-0 opacity-[0.025] mix-blend-overlay pointer-events-none z-0"
+                style={{ backgroundImage: NOISE }} />
 
             {/* ══════ STICKY MINI HEADER ══════ */}
             <motion.div
-                className="sticky top-0 z-40 flex items-center gap-4 px-6 h-16 border-b border-white/[0.04] backdrop-blur-2xl"
+                className="sticky top-0 z-40 flex items-center gap-4 px-5 h-14 border-b border-white/[0.04] backdrop-blur-2xl"
                 style={{
-                    background: useTransform(headerBg, v =>
-                        `rgba(8,8,12,${v * 0.92})`
-                    ) as unknown as string
+                    background: useTransform(headerBg, v => `rgba(8,8,9,${v * 0.94})`) as unknown as string,
                 }}
             >
                 <button
                     onClick={() => router.back()}
-                    className="w-8 h-8 rounded-full bg-white/6 flex items-center justify-center hover:bg-white/12 transition-all flex-shrink-0"
+                    className="w-8 h-8 rounded-full bg-white/[0.05] flex items-center justify-center hover:bg-white/[0.1] transition-all flex-shrink-0 border border-white/[0.06]"
                 >
-                    <ArrowLeft className="w-4 h-4 text-white/70" />
+                    <ArrowLeft className="w-3.5 h-3.5 text-white/60" />
                 </button>
                 <AnimatePresence>
                     {playlist && (
                         <motion.span
                             initial={{ opacity: 0, y: 6 }}
                             animate={{ opacity: 1, y: 0 }}
-                            className="text-sm font-bold text-white truncate flex-1"
+                            className="text-sm font-bold text-white/80 truncate flex-1"
                         >
                             {playlist.title}
                         </motion.span>
@@ -242,99 +350,149 @@ export default function MyPlaylistPage() {
                 {isCurrentPlaylistActive && (
                     <button
                         onClick={togglePlay}
-                        className="w-9 h-9 rounded-full bg-white flex items-center justify-center hover:scale-105 transition-all"
+                        className="w-8 h-8 rounded-full bg-white flex items-center justify-center hover:scale-105 transition-all flex-shrink-0"
                     >
-                        {isPlaying ? <Pause className="w-4 h-4 fill-black text-black" /> : <Play className="w-4 h-4 fill-black text-black ml-0.5" />}
+                        {isPlaying
+                            ? <Pause className="w-3.5 h-3.5 fill-black text-black" />
+                            : <Play className="w-3.5 h-3.5 fill-black text-black ml-0.5" />
+                        }
                     </button>
                 )}
             </motion.div>
 
-            {/* ══════ CINEMATIC HERO ══════ */}
-            <div className="relative overflow-hidden" style={{ height: "clamp(300px, 44vh, 460px)" }}>
-                {/* Parallax blurred cover */}
+            {/* ══════ CINEMATIC SPLIT HERO ══════ */}
+            <div className="relative overflow-hidden" style={{ minHeight: "clamp(320px, 48vh, 520px)" }}>
+
+                {/* Ambient color wash from dominant hue */}
                 <motion.div
-                    className="absolute inset-0"
-                    style={{ scale: heroScale }}
-                >
+                    className="absolute inset-0 pointer-events-none"
+                    animate={{ opacity: [0.35, 0.5, 0.35] }}
+                    transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
+                    style={{
+                        background: `radial-gradient(ellipse at 75% 50%, ${accentColor}, 0.25) 0%, transparent 65%), radial-gradient(ellipse at 20% 80%, ${accentColor}, 0.1) 0%, transparent 50%)`,
+                    }}
+                />
+
+                {/* Full-bleed parallax background */}
+                <motion.div className="absolute inset-0" style={{ scale: heroScale }}>
                     {coverUrl ? (
                         <Image
                             src={coverUrl}
                             alt=""
                             fill
-                            className="object-cover"
+                            className="object-cover opacity-40"
+                            style={{ objectPosition: "center 30%" }}
                             unoptimized
                         />
                     ) : (
-                        <div className="w-full h-full bg-gradient-to-br from-violet-950 via-purple-900 to-black" />
+                        <div className="w-full h-full" style={{
+                            background: `radial-gradient(ellipse at 70% 40%, ${accentColor}, 0.3) 0%, transparent 70%), #080809`,
+                        }} />
                     )}
                 </motion.div>
 
-                {/* Gradients */}
-                <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-transparent to-[#080810]" />
-                <div className="absolute inset-0 bg-gradient-to-r from-[#080810]/80 to-transparent" />
+                {/* Gradients — vignette + bottom fade */}
+                <div className="absolute inset-0" style={{ background: "radial-gradient(ellipse at center, transparent 20%, rgba(0,0,0,0.65) 100%)" }} />
+                <div className="absolute inset-0" style={{ background: "linear-gradient(to bottom, rgba(8,8,9,0.25) 0%, transparent 40%, rgba(8,8,9,0.98) 100%)" }} />
+                <div className="absolute inset-0" style={{ background: "linear-gradient(to right, rgba(8,8,9,0.75) 0%, transparent 55%)" }} />
+                <div className="absolute inset-0 opacity-[0.04] mix-blend-overlay pointer-events-none" style={{ backgroundImage: NOISE }} />
 
-                {/* Film grain */}
-                <div
-                    className="absolute inset-0 opacity-[0.035] mix-blend-overlay pointer-events-none"
-                    style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")` }}
-                />
-
-                {/* Hero text */}
+                {/* Hero content */}
                 <motion.div
                     style={{ opacity: heroOpacity }}
-                    className="absolute bottom-0 left-0 right-0 px-8 pb-8 z-10 flex items-end gap-7"
+                    className="absolute inset-0 flex items-end z-10"
                 >
-                    {/* Cover tile */}
-                    <div className="relative w-36 h-36 rounded-2xl overflow-hidden flex-shrink-0 shadow-[0_20px_60px_rgba(0,0,0,0.7)] ring-1 ring-white/10 bg-white/6">
-                        {coverUrl ? (
-                            <Image src={coverUrl} alt="" fill className="object-cover" unoptimized />
-                        ) : (
-                            <div className="w-full h-full flex items-center justify-center">
-                                <Music2 className="w-12 h-12 text-white/15" />
-                            </div>
-                        )}
-                    </div>
+                    <div className="w-full px-6 sm:px-10 pb-10 flex flex-col sm:flex-row items-end sm:items-end gap-6 sm:gap-10">
 
-                    <div className="min-w-0">
-                        <span className="text-[10px] font-bold uppercase tracking-[0.35em] text-white/35 block mb-2">Плейлист</span>
-                        <h1 className="font-black tracking-tight leading-none text-white mb-3 line-clamp-2"
-                            style={{ fontSize: "clamp(22px, 4vw, 52px)" }}>
-                            {playlist?.title ?? "…"}
-                        </h1>
-                        <div className="flex items-center gap-3 text-white/30 text-xs font-medium">
-                            <span>{tracks.length} треков</span>
-                            {totalMin > 0 && (
-                                <>
-                                    <span className="text-white/15">·</span>
-                                    <span className="flex items-center gap-1">
-                                        <Clock className="w-3 h-3" />
-                                        {totalMin} мин.
-                                    </span>
-                                </>
+                        {/* Cover tile — glassmorphism card */}
+                        <motion.div
+                            initial={{ opacity: 0, y: 20, scale: 0.94 }}
+                            animate={{ opacity: 1, y: 0, scale: 1 }}
+                            transition={{ duration: 0.7, ease: EASE }}
+                            className="relative flex-shrink-0"
+                        >
+                            <div
+                                className="relative overflow-hidden rounded-[22px] ring-1 ring-white/[0.08]"
+                                style={{
+                                    width: "clamp(120px, 16vw, 188px)",
+                                    aspectRatio: "1",
+                                    boxShadow: `0 24px 64px rgba(0,0,0,0.8), 0 0 80px ${accentColor}, 0.2) -40px`,
+                                }}
+                            >
+                                {coverUrl ? (
+                                    <Image src={coverUrl} alt="" fill className="object-cover" unoptimized />
+                                ) : (
+                                    <div className="w-full h-full bg-white/[0.04] flex items-center justify-center">
+                                        <Music2 className="w-10 h-10 text-white/12" />
+                                    </div>
+                                )}
+                            </div>
+                        </motion.div>
+
+                        {/* Info block */}
+                        <motion.div
+                            initial={{ opacity: 0, y: 16 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ duration: 0.7, delay: 0.1, ease: EASE }}
+                            className="flex flex-col gap-3 min-w-0"
+                        >
+                            <span className="text-[10px] font-bold uppercase tracking-[0.45em] text-white/20">
+                                Playlist
+                            </span>
+
+                            {/* Title — tap to rename */}
+                            {isRenaming ? (
+                                <RenameInput
+                                    value={playlist?.title ?? ""}
+                                    onSave={v => { renamePlaylist(id, v); setIsRenaming(false); }}
+                                    onCancel={() => setIsRenaming(false)}
+                                />
+                            ) : (
+                                <button
+                                    onClick={() => setIsRenaming(true)}
+                                    className="group text-left flex items-center gap-3"
+                                >
+                                    <h1
+                                        className="font-black tracking-[-0.04em] leading-none text-white group-hover:text-white/85 transition-colors"
+                                        style={{ fontSize: "clamp(24px, 4vw, 54px)" }}
+                                    >
+                                        {playlist?.title ?? "…"}
+                                    </h1>
+                                    <PenLine className="w-4 h-4 text-white/15 group-hover:text-white/35 transition-colors flex-shrink-0 mt-1" />
+                                </button>
                             )}
-                        </div>
+
+                            {/* Stats pills */}
+                            <div className="flex flex-wrap items-center gap-2 mt-1">
+                                <StatPill icon={<Music2 className="w-3 h-3" />} label={`${tracks.length} треков`} />
+                                {totalMin > 0 && (
+                                    <StatPill icon={<Clock className="w-3 h-3" />} label={`${totalMin} мин`} />
+                                )}
+                            </div>
+                        </motion.div>
                     </div>
                 </motion.div>
             </div>
 
             {/* ══════ ACTION BAR ══════ */}
-            <div className="flex items-center gap-4 px-8 py-6">
+            <div className="flex items-center gap-3 px-6 sm:px-10 pt-6 pb-4">
                 <motion.button
                     onClick={isCurrentPlaylistActive && isPlaying ? togglePlay : handlePlayAll}
                     disabled={tracks.length === 0}
-                    whileHover={{ scale: 1.06 }}
+                    whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.94 }}
-                    className="w-14 h-14 rounded-full bg-white flex items-center justify-center shadow-[0_0_40px_rgba(255,255,255,0.2),0_4px_24px_rgba(0,0,0,0.5)] disabled:opacity-40 flex-shrink-0"
+                    className="flex items-center gap-2.5 px-7 py-3.5 rounded-full bg-white text-black text-sm font-bold disabled:opacity-40 transition-all"
+                    style={{ boxShadow: `0 0 40px rgba(255,255,255,0.18), 0 8px 24px rgba(0,0,0,0.5)` }}
                 >
                     <AnimatePresence mode="wait" initial={false}>
                         {isCurrentPlaylistActive && isPlaying ? (
-                            <motion.div key="pause" initial={{ scale: 0.5, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.5, opacity: 0 }}>
-                                <Pause className="w-6 h-6 fill-black text-black" />
-                            </motion.div>
+                            <motion.span key="p" initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }} className="flex items-center gap-2">
+                                <Pause className="w-4 h-4 fill-current" /> Пауза
+                            </motion.span>
                         ) : (
-                            <motion.div key="play" initial={{ scale: 0.5, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.5, opacity: 0 }}>
-                                <Play className="w-6 h-6 fill-black text-black ml-0.5" />
-                            </motion.div>
+                            <motion.span key="pl" initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }} className="flex items-center gap-2">
+                                <Play className="w-4 h-4 fill-current ml-0.5" /> Слушать
+                            </motion.span>
                         )}
                     </AnimatePresence>
                 </motion.button>
@@ -344,57 +502,59 @@ export default function MyPlaylistPage() {
                     disabled={tracks.length === 0}
                     whileHover={{ scale: 1.08 }}
                     whileTap={{ scale: 0.92 }}
-                    className="w-11 h-11 rounded-full border border-white/10 bg-white/[0.04] hover:bg-white/[0.08] flex items-center justify-center transition-all disabled:opacity-40"
+                    className="w-11 h-11 rounded-full border border-white/[0.08] bg-white/[0.04] hover:bg-white/[0.07] flex items-center justify-center transition-all disabled:opacity-40 backdrop-blur-xl"
                 >
-                    <Shuffle className="w-4 h-4 text-white/60" />
+                    <Shuffle className="w-4 h-4 text-white/50" />
                 </motion.button>
             </div>
 
-            {/* ══════ COLUMN HEADERS ══════ */}
-            {tracks.length > 0 && (
-                <div className="flex items-center gap-4 px-8 pb-2 border-b border-white/[0.05] mb-1">
-                    <span className="w-7 text-center text-[10px] text-white/20 font-semibold uppercase tracking-widest">#</span>
-                    <span className="w-11 flex-shrink-0" />
-                    <span className="flex-1 text-[10px] text-white/20 font-semibold uppercase tracking-widest">Название</span>
-                    <Clock className="w-3 h-3 text-white/15 flex-shrink-0 hidden sm:block" />
-                    <span className="w-24 flex-shrink-0 hidden sm:block" />
-                </div>
-            )}
+            {/* ══════ TRACK LIST (draggable) ══════ */}
+            <div className="px-3 sm:px-6 pb-48">
+                {/* Column headers */}
+                {tracks.length > 0 && (
+                    <div className="flex items-center gap-3 sm:gap-4 px-3 sm:px-5 pb-2 mb-1 border-b border-white/[0.04]">
+                        <span className="w-4 hidden sm:block flex-shrink-0" />
+                        <span className="w-6 text-center text-[10px] text-white/15 font-semibold uppercase tracking-widest">#</span>
+                        <span className="w-11 flex-shrink-0" />
+                        <span className="flex-1 text-[10px] text-white/15 font-semibold uppercase tracking-widest">Название</span>
+                        <span className="hidden sm:block text-[10px] text-white/15 font-semibold uppercase tracking-widest tabular-nums">Время</span>
+                        <span className="w-24 hidden sm:block flex-shrink-0" />
+                    </div>
+                )}
 
-            {/* ══════ TRACK LIST ══════ */}
-            <div className="px-4 pb-48">
+                {/* Empty / loading */}
                 {tracks.length === 0 && !playlist ? (
-                    <div className="flex flex-col items-center py-20 gap-4 text-center">
-                        <motion.div
-                            animate={{ rotate: 360 }}
-                            transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
-                        >
-                            <Music2 className="w-8 h-8 text-white/12" />
+                    <div className="flex flex-col items-center py-24 gap-4 text-center">
+                        <motion.div animate={{ rotate: 360 }} transition={{ duration: 2, repeat: Infinity, ease: "linear" }}>
+                            <Music2 className="w-8 h-8 text-white/10" />
                         </motion.div>
-                        <p className="text-sm text-white/20">Загрузка…</p>
+                        <p className="text-sm text-white/18">Загрузка…</p>
                     </div>
                 ) : tracks.length === 0 ? (
                     <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
+                        initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
                         className="flex flex-col items-center py-28 gap-5 text-center"
                     >
-                        <div
-                            className="w-20 h-20 rounded-3xl flex items-center justify-center"
-                            style={{ background: "rgba(139,92,246,0.08)", border: "1px solid rgba(139,92,246,0.12)" }}
-                        >
-                            <Music2 className="w-9 h-9 text-purple-400/40" />
+                        <div className="w-20 h-20 rounded-3xl bg-white/[0.03] border border-white/[0.05] flex items-center justify-center">
+                            <Music2 className="w-9 h-9 text-white/15" />
                         </div>
                         <div>
-                            <p className="text-base font-semibold text-white/30 mb-1">Плейлист пуст</p>
-                            <p className="text-sm text-white/18 max-w-xs leading-relaxed">
-                                Добавляй треки через кнопку&nbsp;
-                                <span className="text-white/30 font-semibold">⊕</span>&nbsp;рядом с любым треком
+                            <p className="text-[15px] font-semibold text-white/25 mb-1.5">Плейлист пуст</p>
+                            <p className="text-sm text-white/14 max-w-xs leading-relaxed">
+                                Добавляй треки через&nbsp;
+                                <span className="text-white/25 font-semibold">⊕</span>
+                                &nbsp;рядом с любым треком
                             </p>
                         </div>
                     </motion.div>
                 ) : (
-                    <div className="flex flex-col gap-0.5 mt-1">
+                    <Reorder.Group
+                        axis="y"
+                        values={tracks}
+                        onReorder={setTracks}
+                        className="flex flex-col gap-0.5 mt-1"
+                        as="div"
+                    >
                         {tracks.map((track, i) => (
                             <TrackRow
                                 key={track.id}
@@ -406,9 +566,34 @@ export default function MyPlaylistPage() {
                                 isPlaying={isPlaying && !isLoading}
                             />
                         ))}
-                    </div>
+                    </Reorder.Group>
                 )}
             </div>
+
+            {/* ══════ FLOATING PLAY PILL (appears after hero scrolls away) ══════ */}
+            <motion.div
+                style={{ opacity: floatPillShow }}
+                className="fixed bottom-28 left-1/2 -translate-x-1/2 z-40 pointer-events-none"
+            >
+                <motion.button
+                    onClick={isCurrentPlaylistActive && isPlaying ? togglePlay : handlePlayAll}
+                    disabled={tracks.length === 0}
+                    whileHover={{ scale: 1.04 }}
+                    whileTap={{ scale: 0.96 }}
+                    className="flex items-center gap-2.5 px-6 py-3 rounded-full border border-white/[0.1] backdrop-blur-2xl text-sm font-bold text-white disabled:opacity-0 transition-all"
+                    style={{
+                        pointerEvents: "auto" as const,
+                        background: "rgba(15,15,18,0.85)",
+                        boxShadow: "0 8px 40px rgba(0,0,0,0.6)",
+                    }}
+                >
+                    {isCurrentPlaylistActive && isPlaying
+                        ? <><Pause className="w-3.5 h-3.5 fill-current" /> Пауза</>
+                        : <><Play className="w-3.5 h-3.5 fill-current ml-0.5" /> Слушать · {tracks.length} треков</>
+                    }
+                </motion.button>
+            </motion.div>
+
         </div>
     );
 }
