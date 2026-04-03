@@ -1,20 +1,55 @@
-# Vesper — Music Streaming Application
+<div align="center">
 
-> A full-stack music streaming interface built with **Next.js 16**, **React 19**, **TypeScript 5**, and **PostgreSQL**. Powered by the YouTube Data API v3 and Last.fm, Vesper delivers a premium listening experience with a personal library, AI-driven recommendations, synchronized lyrics, queue management, and user-curated playlists.
+<br />
+
+```
+██╗   ██╗███████╗███████╗██████╗ ███████╗██████╗
+██║   ██║██╔════╝██╔════╝██╔══██╗██╔════╝██╔══██╗
+██║   ██║█████╗  ███████╗██████╔╝█████╗  ██████╔╝
+╚██╗ ██╔╝██╔══╝  ╚════██║██╔═══╝ ██╔══╝  ██╔══██╗
+ ╚████╔╝ ███████╗███████║██║     ███████╗██║  ██║
+  ╚═══╝  ╚══════╝╚══════╝╚═╝     ╚══════╝╚═╝  ╚═╝
+```
+
+**Personal Music OS — streaming reimagined**
+
+<br />
+
+[![Next.js](https://img.shields.io/badge/Next.js_16-black?style=for-the-badge&logo=next.js&logoColor=white)](https://nextjs.org)
+[![React](https://img.shields.io/badge/React_19-20232A?style=for-the-badge&logo=react&logoColor=61DAFB)](https://react.dev)
+[![TypeScript](https://img.shields.io/badge/TypeScript_5-3178C6?style=for-the-badge&logo=typescript&logoColor=white)](https://typescriptlang.org)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-4169E1?style=for-the-badge&logo=postgresql&logoColor=white)](https://postgresql.org)
+[![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS_4-06B6D4?style=for-the-badge&logo=tailwindcss&logoColor=white)](https://tailwindcss.com)
+
+[![Framer Motion](https://img.shields.io/badge/Framer_Motion-black?style=for-the-badge&logo=framer&logoColor=white)](https://framer.com/motion)
+[![Zustand](https://img.shields.io/badge/Zustand_5-brown?style=for-the-badge&logo=npm&logoColor=white)](https://zustand-demo.pmnd.rs)
+[![Three.js](https://img.shields.io/badge/Three.js-black?style=for-the-badge&logo=three.js&logoColor=white)](https://threejs.org)
+[![YouTube API](https://img.shields.io/badge/YouTube_Data_API_v3-FF0000?style=for-the-badge&logo=youtube&logoColor=white)](https://developers.google.com/youtube)
+[![Last.fm](https://img.shields.io/badge/Last.fm_API-D51007?style=for-the-badge&logo=last.fm&logoColor=white)](https://www.last.fm/api)
+
+<br />
+
+> A full-stack music streaming interface powered by the YouTube catalog, enriched with Last.fm metadata.  
+> Personal library. Synchronized lyrics. AI companion. Queue management. Curated playlists.  
+> All wrapped in a Twilight Interface with dynamic accent colors extracted from album artwork.
+
+<br />
+
+</div>
 
 ---
 
 ## Table of Contents
 
 - [Overview](#overview)
-- [Technology Stack](#technology-stack)
+- [Tech Stack](#tech-stack)
+- [Architecture](#architecture)
 - [Project Structure](#project-structure)
-- [Data Layer](#data-layer)
-- [API Routes](#api-routes)
-- [State Management](#state-management)
 - [Key Features](#key-features)
-- [Environment Variables](#environment-variables)
+- [API Reference](#api-reference)
+- [State Management](#state-management)
 - [Database Schema](#database-schema)
+- [Environment Variables](#environment-variables)
 - [Getting Started](#getting-started)
 - [Scripts](#scripts)
 
@@ -22,39 +57,78 @@
 
 ## Overview
 
-Vesper is a client-server music application that uses YouTube's publicly available video catalog as its audio backend. It augments raw video metadata with artist information and album art fetched from **Last.fm**, delivering a curated music experience rather than a generic video player.
+Vesper uses YouTube's publicly available video catalog as its audio backend and augments raw metadata with artist info, album art, and genre tags fetched from **Last.fm** — delivering a curated music experience rather than a generic video player.
 
-The application runs entirely server-side for all data-sensitive operations (search, metadata enrichment, authentication) via Next.js Route Handlers, while the UI is a fully client-side React application with Zustand-powered reactive state.
+All data-sensitive operations (search, metadata enrichment, authentication) run exclusively server-side via Next.js Route Handlers. The UI is a fully client-side React application with Zustand-powered reactive state. The hidden YouTube iframe stays alive across page navigations with zero re-mounts, making track transitions seamless.
 
----
 
-## Technology Stack
+## Tech Stack
 
 ### Frontend
 
-| Technology | Version | Purpose |
+| Package | Version | Role |
 |---|---|---|
-| Next.js | 16.1.6 | React framework, App Router, Route Handlers |
-| React | 19.2.3 | UI library |
-| TypeScript | ^5 | Strict static typing across the entire codebase |
-| Tailwind CSS | ^4 | Utility-first styling |
-| Framer Motion | ^12 | Declarative animations and layout transitions |
-| Zustand | ^5 | Lightweight global state management |
-| Three.js / R3F | ^0.183 | 3D WebGL rendering for the Vesper AI scene |
-| Lucide React | ^0.577 | Icon library |
-| fast-average-color | ^9.5 | Dominant color extraction from album art |
+| `next` | `16.1.6` | React framework — App Router, Route Handlers, middleware |
+| `react` | `19.2.3` | UI rendering library |
+| `typescript` | `^5` | Strict static typing across the entire codebase |
+| `tailwindcss` | `^4` | Utility-first styling with CSS custom properties |
+| `framer-motion` | `^12` | Declarative animations, layout transitions, gestures |
+| `zustand` | `^5` | Lightweight global state management |
+| `three` / `@react-three/fiber` | `^0.183` | WebGL 3D rendering for the Vesper AI scene |
+| `lucide-react` | `^0.577` | Icon library |
+| `fast-average-color` | `^9.5` | Dominant color extraction from album artwork |
 
-### Backend / Server
+### Backend
 
-| Technology | Version | Purpose |
+| Package | Version | Role |
 |---|---|---|
-| Next.js Route Handlers | — | REST API endpoints (no separate server needed) |
-| PostgreSQL | — | Persistent storage for users, library, history |
-| `pg` | ^8.20 | PostgreSQL Node.js driver |
-| `bcryptjs` | ^3 | Password hashing |
-| `jose` / `jsonwebtoken` | — | JWT-based session management |
-| YouTube Data API v3 | — | Primary music catalog and search |
+| Next.js Route Handlers | — | REST API endpoints — no separate server needed |
+| PostgreSQL | `14+` | Persistent storage for users, library, history |
+| `pg` | `^8.20` | PostgreSQL Node.js driver |
+| `bcryptjs` | `^3` | Password hashing |
+| `jose` / `jsonwebtoken` | — | JWT-based stateless session management |
+| YouTube Data API v3 | — | Primary music catalog and full-text search |
 | Last.fm API | — | Artist metadata, album art, genre tags |
+
+---
+
+## Architecture
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                         Browser (Client)                        │
+│                                                                 │
+│   ┌──────────┐   ┌───────────────┐   ┌──────────────────────┐  │
+│   │  Zustand │   │ React / RSC   │   │  HiddenYouTubePlayer │  │
+│   │  Stores  │◄──│  Components   │   │  (headless iframe)   │  │
+│   └────┬─────┘   └───────┬───────┘   └──────────┬───────────┘  │
+│        │                 │                       │               │
+│        └─────────────────┴───────────────────────┘              │
+│                          │ fetch                                 │
+└──────────────────────────┼──────────────────────────────────────┘
+                           │
+┌──────────────────────────┼──────────────────────────────────────┐
+│              Next.js Server (Route Handlers)                    │
+│                                                                 │
+│   ┌──────────┐  ┌───────────┐  ┌───────────┐  ┌─────────────┐  │
+│   │   auth   │  │  search   │  │ playlists │  │    stats    │  │
+│   │  /login  │  │  /trending│  │  /library │  │   /radio    │  │
+│   └────┬─────┘  └─────┬─────┘  └─────┬─────┘  └──────┬──────┘  │
+│        │              │              │                 │          │
+│   ┌────▼──────────────▼──────────────▼─────────────────▼──────┐ │
+│   │           lib/ — youtube · lastfm · metadata · auth       │ │
+│   └──────────────────────────┬─────────────────────────────────┘ │
+└─────────────────────────────┼───────────────────────────────────┘
+                              │
+             ┌────────────────┼────────────────┐
+             │                │                │
+    ┌────────▼──────┐  ┌──────▼──────┐  ┌──────▼──────┐
+    │  PostgreSQL   │  │ YouTube API │  │  Last.fm API │
+    │  (users,      │  │  v3 catalog │  │  metadata    │
+    │  library,     │  └─────────────┘  └─────────────┘
+    │  history)     │
+    └───────────────┘
+```
 
 ---
 
@@ -62,243 +136,292 @@ The application runs entirely server-side for all data-sensitive operations (sea
 
 ```
 src/
-├── app/                        # Next.js App Router
-│   ├── (auth)/                 # Route group: login, register pages
-│   ├── api/                    # Server-only Route Handlers
-│   │   ├── auth/               # POST /api/auth/login, /register, /logout, /me
-│   │   ├── search/             # GET  /api/search?q=...
-│   │   ├── trending/           # GET  /api/trending
-│   │   ├── playlists/          # GET|POST|DELETE /api/playlists
-│   │   ├── library/            # GET|POST|DELETE /api/library (liked tracks)
-│   │   ├── metadata/           # GET  /api/metadata?videoId=...
-│   │   ├── stats/              # GET  /api/stats (listening stats for Vesper AI)
-│   │   ├── image/              # GET  /api/image (album art proxy / CORS bypass)
-│   │   └── discover/           # GET  /api/discover
-│   ├── discover/               # Discover page
-│   ├── library/                # Personal library page
-│   ├── my-playlist/[id]/       # User-curated playlist page (dynamic route)
-│   ├── playlist/[id]/          # YouTube public playlist page (dynamic route)
-│   ├── vesper/                 # Vesper AI companion page (3D scene)
-│   ├── layout.tsx              # Root layout with sidebar, player, providers
-│   └── globals.css             # Global CSS reset and design tokens
+├── app/
+│   ├── (auth)/                     # Route group — login & register
+│   ├── api/
+│   │   ├── auth/                   # login · register · logout · me
+│   │   ├── search/                 # Full-text track search
+│   │   ├── trending/               # Global trending music
+│   │   ├── discover/               # Genre & mood discovery
+│   │   ├── metadata/art/           # Last.fm metadata enrichment
+│   │   ├── library/
+│   │   │   ├── liked-tracks/       # Liked tracks CRUD
+│   │   │   └── saved-playlists/    # Saved playlist references
+│   │   ├── playlists/[id]/
+│   │   │   └── tracks/             # Playlist track management
+│   │   ├── stats/
+│   │   │   ├── listen/             # Record a listen event
+│   │   │   └── summary/            # Aggregated listening stats
+│   │   ├── radio/                  # AI radio / autoplay
+│   │   └── image/                  # Album art proxy (CORS bypass)
+│   │
+│   ├── discover/                   # Discover page
+│   ├── library/                    # Personal library page
+│   ├── my-playlist/[id]/           # User-curated playlist (dynamic)
+│   ├── playlist/[id]/              # YouTube public playlist (dynamic)
+│   ├── vesper/                     # Vesper AI companion (3D scene)
+│   ├── layout.tsx                  # Root layout — sidebar, player, providers
+│   └── globals.css                 # Global CSS reset and design tokens
 │
 ├── components/
 │   ├── layout/
-│   │   ├── Sidebar.tsx         # Navigation, playlists list, auth widget
-│   │   └── Header.tsx          # Page-level header
+│   │   ├── AppShell.tsx            # Outer shell — sidebar + content area
+│   │   ├── Sidebar.tsx             # Navigation, playlists list, auth widget
+│   │   ├── MobileNav.tsx           # Bottom navigation for mobile
+│   │   └── PageTransition.tsx      # Route transition wrapper
+│   │
 │   ├── player/
-│   │   ├── GlobalAudioPlayer.tsx     # Persistent mini-player bar (bottom)
-│   │   ├── FullScreenPlayer.tsx      # Full-screen artwork + controls overlay
-│   │   ├── HiddenYouTubePlayer.tsx   # Headless YouTube iframe bridge
-│   │   ├── QueuePanel.tsx            # Slide-over queue and history panel
-│   │   └── SynchronizedLyrics.tsx    # Time-synced lyrics display
+│   │   ├── GlobalAudioPlayer.tsx   # Persistent mini-player bar (bottom)
+│   │   ├── FullScreenPlayer.tsx    # Full-screen artwork + controls overlay
+│   │   ├── HiddenYouTubePlayer.tsx # Headless YouTube iframe bridge
+│   │   ├── QueuePanel.tsx          # Slide-over queue and history panel
+│   │   ├── SynchronizedLyrics.tsx  # Time-synced lyrics (LRC format)
+│   │   └── ClientBackgroundHydrator.tsx
+│   │
+│   ├── home/
+│   │   ├── ChartRow.tsx            # Trending chart row
+│   │   ├── DragShelf.tsx           # Horizontal drag-scroll shelf
+│   │   ├── MoodPanel.tsx           # Mood / genre selector
+│   │   ├── NowPlayingEditorial.tsx # Editorial now-playing card
+│   │   ├── ShelfCard.tsx           # Album / playlist card
+│   │   └── Shared.tsx
+│   │
 │   ├── playlists/
-│   │   ├── PlaylistManager.tsx       # CRUD UI for user playlists
-│   │   └── AddToPlaylistPicker.tsx   # Modal: add a track to a playlist
-│   ├── home/                   # Section components for the home page
-│   ├── ui/                     # Primitive components (TrackRow, AuraTrackImage, etc.)
-│   └── vesper/                 # 3D AI scene components
+│   │   ├── PlaylistManager.tsx     # CRUD UI for user playlists
+│   │   ├── AddToPlaylistPicker.tsx # Modal — add track to playlist
+│   │   └── PlaylistOptionsMenu.tsx # Context menu for playlist actions
+│   │
+│   ├── ui/
+│   │   ├── AlbumCard.tsx
+│   │   ├── AmbientBackground.tsx   # Blurred ambient color backdrop
+│   │   ├── AuraDNAVisualizer.tsx   # Genre DNA visualization
+│   │   ├── AuraTrackImage.tsx      # Track image with color extraction
+│   │   ├── GlassButton.tsx
+│   │   ├── MagneticCursor.tsx      # Custom magnetic cursor
+│   │   ├── MiniWave.tsx            # Mini waveform animation
+│   │   ├── SonicWaveform.tsx       # Full waveform visualizer
+│   │   ├── SpatialAlbumGallery.tsx # 3D spatial gallery
+│   │   ├── ThreeDSceneComponent.tsx
+│   │   └── TrackRow.tsx            # Standard track list row
+│   │
+│   └── vesper/
+│       ├── AuraCard.tsx
+│       ├── GenreDNA.tsx
+│       ├── Hero.tsx
+│       ├── Stats.tsx
+│       └── TrackList.tsx
 │
-├── store/
-│   ├── usePlayerStore.ts       # Playback engine: queue, current track, volume, crossfade
-│   ├── useAuthStore.ts         # Session: user object, login/logout, hydration
-│   ├── useLibraryStore.ts      # Liked tracks: optimistic sync with PostgreSQL
-│   ├── usePlaylistsStore.ts    # User playlists: CRUD, track management
-│   └── useMetadataStore.ts     # Track metadata cache (Last.fm / YouTube)
+├── hooks/
+│   ├── useAmbientColor.ts          # Extract dominant color from album art
+│   └── useLyrics.ts                # Fetch and parse LRC lyrics
 │
 ├── lib/
-│   ├── youtube.ts              # YouTube Data API v3 wrapper (server-only)
-│   ├── lastfm.ts               # Last.fm REST wrapper (server-only)
-│   ├── metadata.ts             # Metadata enrichment pipeline
-│   ├── db.ts                   # PostgreSQL connection pool
-│   ├── auth.ts                 # JWT helpers and cookie management
-│   ├── tokens.ts               # Token signing and verification
-│   ├── rateLimit.ts            # In-memory per-IP rate limiter
-│   ├── migrate.ts              # One-shot database migration script
-│   ├── utils.ts                # Shared utilities: cn(), cleanTitle(), etc.
-│   └── constants.ts            # Application-wide constants
+│   ├── youtube.ts                  # YouTube Data API v3 wrapper (server-only)
+│   ├── lastfm.ts                   # Last.fm REST wrapper (server-only)
+│   ├── metadata.ts                 # Metadata enrichment pipeline
+│   ├── db.ts                       # PostgreSQL connection pool
+│   ├── auth.ts                     # JWT helpers and cookie management
+│   ├── tokens.ts                   # Token signing and verification
+│   ├── rateLimit.ts                # In-memory per-IP token-bucket rate limiter
+│   ├── migrate.ts                  # Idempotent DB migration script
+│   ├── logger.ts                   # Structured logger
+│   ├── utils.ts                    # Shared utilities: cn(), cleanTitle()
+│   └── constants.ts                # Application-wide constants
 │
-└── middleware.ts               # Route protection via JWT cookie verification
+├── store/
+│   ├── usePlayerStore.ts           # Queue, current track, volume, crossfade
+│   ├── usePlayerUIStore.ts         # Full-screen and queue panel open state
+│   ├── useAuthStore.ts             # Session — user object, login/logout
+│   ├── useLibraryStore.ts          # Liked tracks with optimistic sync
+│   ├── usePlaylistsStore.ts        # Playlist CRUD and track management
+│   └── useMetadataStore.ts         # In-memory metadata cache
+│
+└── middleware.ts                   # Route protection via JWT cookie
 ```
-
----
-
-## Data Layer
-
-### Track — core data primitive
-
-```typescript
-// src/lib/youtube.ts
-export interface Track {
-    id: string;           // YouTube video ID
-    title: string;        // Raw video title (cleaned via cleanTitle())
-    artist: string;       // Channel title / artist name
-    durationMs: number;   // Duration in milliseconds
-    albumImageUrl?: string; // Last.fm or YouTube thumbnail
-}
-```
-
-### Playlist
-
-```typescript
-export interface Playlist {
-    id: string;
-    title: string;
-    description: string;
-    imageUrl: string;
-    tracks: Track[];
-}
-
-export type Album = Playlist; // YouTube has no native album concept
-```
-
----
-
-## API Routes
-
-| Method | Route | Auth Required | Description |
-|---|---|---|---|
-| `POST` | `/api/auth/register` | No | Create a new account |
-| `POST` | `/api/auth/login` | No | Issue a JWT session cookie |
-| `POST` | `/api/auth/logout` | No | Clear the session cookie |
-| `GET` | `/api/auth/me` | Yes | Return the current user object |
-| `GET` | `/api/search?q=` | No | Search tracks via YouTube API |
-| `GET` | `/api/trending` | No | Fetch trending music globally |
-| `GET` | `/api/discover` | No | Curated genre/mood discovery |
-| `GET` | `/api/metadata?videoId=` | No | Enrich a track with Last.fm metadata |
-| `GET` | `/api/library` | Yes | List the user's liked tracks |
-| `POST` | `/api/library` | Yes | Like a track |
-| `DELETE` | `/api/library?trackId=` | Yes | Unlike a track |
-| `GET` | `/api/playlists` | Yes | List the user's playlists |
-| `POST` | `/api/playlists` | Yes | Create a new playlist |
-| `GET` | `/api/playlists/[id]` | Yes | Get a playlist with its tracks |
-| `PATCH` | `/api/playlists/[id]` | Yes | Rename a playlist |
-| `DELETE` | `/api/playlists/[id]` | Yes | Delete a playlist |
-| `POST` | `/api/playlists/[id]/tracks` | Yes | Add a track to a playlist |
-| `DELETE` | `/api/playlists/[id]/tracks` | Yes | Remove a track from a playlist |
-| `GET` | `/api/stats` | Yes | Listening history and genre breakdown |
-| `GET` | `/api/image` | No | Album art proxy (CORS bypass) |
-
----
-
-## State Management
-
-All client state is managed through **Zustand** stores. Each store is colocated with its persistence and sync logic:
-
-| Store | Responsibility |
-|---|---|
-| `usePlayerStore` | Active queue, current track, playback position, volume, crossfade duration, repeat/shuffle mode |
-| `useAuthStore` | Authenticated user, login/logout actions, cookie hydration on mount |
-| `useLibraryStore` | Liked tracks list with optimistic UI and server sync |
-| `usePlaylistsStore` | User playlist CRUD, adding / removing tracks per playlist |
-| `useMetadataStore` | In-memory cache of enriched track metadata to prevent redundant API calls |
 
 ---
 
 ## Key Features
 
 ### Audio Playback Engine
-The audio pipeline is a three-layer bridge: **Zustand** holds the queue and playback state — **HiddenYouTubePlayer** renders a headless YouTube iframe using the `react-youtube` SDK — **GlobalAudioPlayer** subscribes to store state and issues commands to the iframe via the YouTube IFrame API. This architecture keeps the YouTube player alive across page navigations with zero re-mounts.
 
-### Full-Screen Player
-A modal-style overlay (`FullScreenPlayer`) reads the dominant color from the current album artwork using `fast-average-color` and constructs a dynamic gradient background, making every track visually unique. Controls include seek bar, volume, shuffle, repeat, queue view, and synchronized lyrics.
+The pipeline is a three-layer bridge. **Zustand** (`usePlayerStore`) holds queue, current track, volume, repeat/shuffle state. **`HiddenYouTubePlayer`** renders a headless YouTube iframe using the `react-youtube` SDK — kept alive across navigations with zero re-mounts. **`GlobalAudioPlayer`** subscribes to store state and issues imperative commands to the iframe via the YouTube IFrame API.
+
+### Full-Screen Player with Dynamic Color
+
+**`FullScreenPlayer`** reads the dominant color from the current album artwork using `fast-average-color` and builds a unique gradient backdrop per track. Includes seek bar, volume control, shuffle, repeat, queue access, and embedded synchronized lyrics.
 
 ### Synchronized Lyrics
-`SynchronizedLyrics` parses LRC-format timestamps from the metadata response and auto-scrolls to the active lyric line based on `currentTime` from the player store.
+
+**`SynchronizedLyrics`** fetches LRC-format timestamps from the metadata pipeline (LRCLIB as primary source, Genius as fallback) and auto-scrolls to the active line keyed to `currentTime` from the player store.
 
 ### Vesper AI Companion
-A dedicated page (`/vesper`) renders a Three.js / React Three Fiber 3D scene. It reads listening statistics (top genres, recent plays) from `/api/stats` and generates a personalized recommendation narrative.
 
-### Playlist Management
-Users can create, rename, and delete playlists. Individual tracks can be added from:
-- The `TrackRow` hover action (`ListPlus` icon)
-- The `AddToPlaylistPicker` modal that lists all user playlists
-
-### Authentication
-Stateless JWT authentication. Tokens are stored in an `httpOnly` cookie. The `middleware.ts` file protects server-rendered pages. API routes check the cookie via the `auth.ts` helper on each request.
-
-### Rate Limiting
-An in-memory token-bucket rate limiter (`rateLimit.ts`) is applied on all write endpoints to prevent abuse without requiring a Redis dependency.
+A dedicated `/vesper` page renders a Three.js / React Three Fiber 3D scene. It reads aggregated listening stats from `/api/stats/summary` — top genres, recent plays, listening streaks — and generates a personalized recommendation narrative.
 
 ### YouTube API Key Rotation
-`youtube.ts` supports up to three YouTube API keys (`YOUTUBE_API_KEY`, `YOUTUBE_API_KEY_2`, `YOUTUBE_API_KEY_3`). When a quota error is detected on one key the client automatically rotates to the next.
+
+`lib/youtube.ts` supports up to three API keys (`YOUTUBE_API_KEY`, `YOUTUBE_API_KEY_2`, `YOUTUBE_API_KEY_3`). When a quota error is detected on one key the client automatically rotates to the next, maximizing uptime against daily quota limits.
+
+### Stateless JWT Authentication
+
+Tokens are stored in an `httpOnly` cookie. `middleware.ts` protects server-rendered pages via cookie verification before the response is sent. All protected API routes re-validate the token independently on each request via `lib/auth.ts`.
+
+### Rate Limiting
+
+An in-memory token-bucket rate limiter (`lib/rateLimit.ts`) is applied to all write endpoints — no Redis dependency required.
+
+### Optimistic UI Throughout
+
+Library likes and playlist track additions apply state changes instantly in Zustand and sync with the database in the background. Failed requests trigger a rollback.
 
 ---
 
-## Environment Variables
+## API Reference
 
-Create `.env.local` in the project root. Use `.env.example` as the template.
+### Authentication
 
-| Variable | Required | Description |
+| Method | Route | Auth | Description |
+|---|---|:---:|---|
+| `POST` | `/api/auth/register` | — | Create a new account |
+| `POST` | `/api/auth/login` | — | Issue a JWT session cookie |
+| `POST` | `/api/auth/logout` | — | Clear the session cookie |
+| `GET` | `/api/auth/me` | ✓ | Return the current user object |
+
+### Discovery
+
+| Method | Route | Auth | Description |
+|---|---|:---:|---|
+| `GET` | `/api/search?q=` | — | Full-text track search via YouTube API |
+| `GET` | `/api/trending` | — | Global trending music |
+| `GET` | `/api/discover` | — | Genre and mood-based discovery |
+| `GET` | `/api/metadata/art?videoId=` | — | Enrich a track with Last.fm metadata |
+| `GET` | `/api/image?url=` | — | Album art proxy (CORS bypass) |
+
+### Library
+
+| Method | Route | Auth | Description |
+|---|---|:---:|---|
+| `GET` | `/api/library/liked-tracks` | ✓ | List liked tracks |
+| `POST` | `/api/library/liked-tracks` | ✓ | Like a track |
+| `DELETE` | `/api/library/liked-tracks?trackId=` | ✓ | Unlike a track |
+
+### Playlists
+
+| Method | Route | Auth | Description |
+|---|---|:---:|---|
+| `GET` | `/api/playlists` | ✓ | List user playlists |
+| `POST` | `/api/playlists` | ✓ | Create a new playlist |
+| `GET` | `/api/playlists/[id]` | ✓ | Get playlist with tracks |
+| `PATCH` | `/api/playlists/[id]` | ✓ | Rename a playlist |
+| `DELETE` | `/api/playlists/[id]` | ✓ | Delete a playlist |
+| `POST` | `/api/playlists/[id]/tracks` | ✓ | Add a track to a playlist |
+| `DELETE` | `/api/playlists/[id]/tracks` | ✓ | Remove a track from a playlist |
+
+### Stats & Radio
+
+| Method | Route | Auth | Description |
+|---|---|:---:|---|
+| `POST` | `/api/stats/listen` | ✓ | Record a listen event |
+| `GET` | `/api/stats/summary` | ✓ | Aggregated stats (genres, history, streaks) |
+| `GET` | `/api/radio` | — | AI radio / autoplay track suggestions |
+
+---
+
+## State Management
+
+All client state is managed through Zustand stores. Each store owns its persistence, optimistic update, and server sync logic.
+
+| Store | File | Responsibility |
 |---|---|---|
-| `DATABASE_URL` | Yes | PostgreSQL connection string |
-| `JWT_SECRET` | Yes | Minimum 32-character random string for signing tokens |
-| `JWT_EXPIRY` | No | Token lifetime (default: `7d`) |
-| `YOUTUBE_API_KEY` | Yes | Primary YouTube Data API v3 key |
-| `YOUTUBE_API_KEY_2` | No | Fallback YouTube key (quota rotation) |
-| `YOUTUBE_API_KEY_3` | No | Second fallback YouTube key |
-| `LASTFM_API_KEY` | Yes | Last.fm API key for metadata enrichment |
-
-Generate a secure JWT secret:
-```bash
-openssl rand -base64 32
-```
+| Player | `usePlayerStore.ts` | Active queue, current track, playback position, volume, crossfade, repeat/shuffle |
+| Player UI | `usePlayerUIStore.ts` | Full-screen player and queue panel open state |
+| Auth | `useAuthStore.ts` | Authenticated user, login/logout actions, cookie hydration on mount |
+| Library | `useLibraryStore.ts` | Liked tracks with optimistic UI and server sync |
+| Playlists | `usePlaylistsStore.ts` | User playlist CRUD and per-playlist track management |
+| Metadata | `useMetadataStore.ts` | In-memory cache of enriched track metadata to prevent redundant API calls |
 
 ---
 
 ## Database Schema
 
-The migration script (`src/lib/migrate.ts`) is idempotent and creates the following tables:
+The migration script (`src/lib/migrate.ts`) is **idempotent** — safe to run multiple times.
 
 ```sql
--- Registered users
+-- Users
 CREATE TABLE IF NOT EXISTS users (
     id            SERIAL PRIMARY KEY,
     username      VARCHAR(32)  UNIQUE NOT NULL,
     email         VARCHAR(255) UNIQUE NOT NULL,
-    password_hash TEXT NOT NULL,
-    avatar_seed   TEXT DEFAULT '',
-    created_at    TIMESTAMPTZ DEFAULT NOW(),
-    updated_at    TIMESTAMPTZ DEFAULT NOW()
+    password_hash TEXT         NOT NULL,
+    avatar_seed   TEXT         DEFAULT '',
+    created_at    TIMESTAMPTZ  DEFAULT NOW(),
+    updated_at    TIMESTAMPTZ  DEFAULT NOW()
 );
 
--- Heart-liked tracks per user
+-- Liked tracks per user
 CREATE TABLE IF NOT EXISTS liked_tracks (
     id              SERIAL PRIMARY KEY,
-    user_id         INTEGER REFERENCES users(id) ON DELETE CASCADE,
-    track_id        TEXT NOT NULL,
-    title           TEXT NOT NULL,
-    artist          TEXT NOT NULL,
+    user_id         INTEGER     REFERENCES users(id) ON DELETE CASCADE,
+    track_id        TEXT        NOT NULL,
+    title           TEXT        NOT NULL,
+    artist          TEXT        NOT NULL,
     album_image_url TEXT,
-    duration_ms     INTEGER DEFAULT 0,
+    duration_ms     INTEGER     DEFAULT 0,
     created_at      TIMESTAMPTZ DEFAULT NOW(),
     UNIQUE(user_id, track_id)
 );
 
--- User-curated playlists (metadata stored in DB, tracks in playlist_tracks)
+-- User-curated playlists
 CREATE TABLE IF NOT EXISTS saved_playlists (
     id          SERIAL PRIMARY KEY,
-    user_id     INTEGER REFERENCES users(id) ON DELETE CASCADE,
-    playlist_id TEXT NOT NULL,
-    title       TEXT NOT NULL,
+    user_id     INTEGER     REFERENCES users(id) ON DELETE CASCADE,
+    playlist_id TEXT        NOT NULL,
+    title       TEXT        NOT NULL,
     description TEXT,
     image_url   TEXT,
     created_at  TIMESTAMPTZ DEFAULT NOW(),
     UNIQUE(user_id, playlist_id)
 );
 
--- Full listening history for stats / AI recommendations
+-- Full listening history (powers Vesper AI stats)
 CREATE TABLE IF NOT EXISTS listening_history (
     id              SERIAL PRIMARY KEY,
-    user_id         INTEGER REFERENCES users(id) ON DELETE CASCADE,
-    track_id        TEXT NOT NULL,
-    title           TEXT NOT NULL,
-    artist          TEXT NOT NULL,
+    user_id         INTEGER     REFERENCES users(id) ON DELETE CASCADE,
+    track_id        TEXT        NOT NULL,
+    title           TEXT        NOT NULL,
+    artist          TEXT        NOT NULL,
     album_image_url TEXT,
     duration_ms     INTEGER,
-    genre           TEXT DEFAULT 'Unknown',
+    genre           TEXT        DEFAULT 'Unknown',
     listened_at     TIMESTAMPTZ DEFAULT NOW()
 );
+```
+
+---
+
+## Environment Variables
+
+Copy `.env.example` to `.env.local` and fill in all required values.
+
+```bash
+cp .env.example .env.local
+```
+
+| Variable | Required | Description |
+|---|:---:|---|
+| `DATABASE_URL` | ✓ | PostgreSQL connection string |
+| `JWT_SECRET` | ✓ | Minimum 32-character random string for signing tokens |
+| `JWT_EXPIRY` | — | Token lifetime (default: `7d`) |
+| `YOUTUBE_API_KEY` | ✓ | Primary YouTube Data API v3 key |
+| `YOUTUBE_API_KEY_2` | — | Fallback YouTube key (quota rotation) |
+| `YOUTUBE_API_KEY_3` | — | Second fallback YouTube key |
+| `LASTFM_API_KEY` | ✓ | Last.fm API key for metadata enrichment |
+
+Generate a secure JWT secret:
+
+```bash
+openssl rand -base64 32
 ```
 
 ---
@@ -307,24 +430,24 @@ CREATE TABLE IF NOT EXISTS listening_history (
 
 ### Prerequisites
 
-- Node.js 20+
-- PostgreSQL 14+
-- A Google Cloud project with YouTube Data API v3 enabled
-- A Last.fm API account
+- **Node.js** 20+
+- **PostgreSQL** 14+
+- A Google Cloud project with **YouTube Data API v3** enabled
+- A **Last.fm** developer account
 
 ### Installation
 
 ```bash
 # 1. Clone the repository
-git clone <repository-url>
+git clone https://github.com/ataniyaz228/vesper.git
 cd vesper
 
 # 2. Install dependencies
 npm install
 
-# 3. Configure environment
+# 3. Configure environment variables
 cp .env.example .env.local
-# Fill in all required values in .env.local
+# Edit .env.local and fill in all required values
 
 # 4. Run database migrations
 npm run db:migrate
@@ -333,7 +456,7 @@ npm run db:migrate
 npm run dev
 ```
 
-The application will be available at `http://localhost:3000`.
+Open [http://localhost:3000](http://localhost:3000) in your browser.
 
 ---
 
@@ -341,359 +464,46 @@ The application will be available at `http://localhost:3000`.
 
 | Script | Command | Description |
 |---|---|---|
-| Development server | `npm run dev` | Starts Next.js with hot reload |
-| Production build | `npm run build` | Compiles and optimizes for production |
-| Production server | `npm run start` | Runs the compiled production build |
-| Lint | `npm run lint` | Runs ESLint across the project |
-| Database migration | `npm run db:migrate` | Creates or updates the PostgreSQL schema |
+| Development | `npm run dev` | Start Next.js with hot reload |
+| Build | `npm run build` | Compile and optimize for production |
+| Production | `npm run start` | Run the compiled production build |
+| Lint | `npm run lint` | Run ESLint across the project |
+| Migrate | `npm run db:migrate` | Create or update the PostgreSQL schema |
 
 ---
 
----
-
-# Vesper — Музыкальный стриминг
-
-> Полноценное веб-приложение для прослушивания музыки на базе **Next.js 16**, **React 19**, **TypeScript 5** и **PostgreSQL**. Использует YouTube Data API v3 как каталог треков и Last.fm для обогащения метаданными — обложки, жанры, теги исполнителей.
-
----
-
-## Содержание
-
-- [Обзор](#обзор)
-- [Стек технологий](#стек-технологий)
-- [Структура проекта](#структура-проекта)
-- [Типы данных](#типы-данных)
-- [API-маршруты](#api-маршруты)
-- [Управление состоянием](#управление-состоянием)
-- [Ключевые возможности](#ключевые-возможности)
-- [Переменные окружения](#переменные-окружения)
-- [Схема базы данных](#схема-базы-данных)
-- [Запуск проекта](#запуск-проекта)
-- [Скрипты](#скрипты)
-
----
-
-## Обзор
-
-Vesper — клиент-серверное музыкальное приложение, которое использует YouTube как источник аудио. Все чувствительные к данным операции (поиск, обогащение метаданными, аутентификация) выполняются строго на сервере через Route Handlers Next.js. Интерфейс — полностью клиентское React-приложение с реактивным состоянием через Zustand.
-
----
-
-## Стек технологий
-
-### Фронтенд
-
-| Технология | Версия | Назначение |
-|---|---|---|
-| Next.js | 16.1.6 | React-фреймворк, App Router, серверные маршруты |
-| React | 19.2.3 | UI-библиотека |
-| TypeScript | ^5 | Строгая статическая типизация |
-| Tailwind CSS | ^4 | Утилитарные стили |
-| Framer Motion | ^12 | Анимации и переходы |
-| Zustand | ^5 | Управление глобальным состоянием |
-| Three.js / R3F | ^0.183 | 3D WebGL-сцена для страницы Vesper AI |
-| Lucide React | ^0.577 | Библиотека иконок |
-| fast-average-color | ^9.5 | Извлечение доминирующего цвета из обложки |
-
-### Бэкенд / Сервер
-
-| Технология | Версия | Назначение |
-|---|---|---|
-| Next.js Route Handlers | — | REST API (без отдельного сервера) |
-| PostgreSQL | — | Постоянное хранение: пользователи, библиотека, история |
-| `pg` | ^8.20 | PostgreSQL-драйвер для Node.js |
-| `bcryptjs` | ^3 | Хеширование паролей |
-| `jose` / `jsonwebtoken` | — | Управление сессиями через JWT |
-| YouTube Data API v3 | — | Каталог музыки и поиск |
-| Last.fm API | — | Метаданные исполнителей, обложки, жанры |
-
----
-
-## Структура проекта
-
-```
-src/
-├── app/                        # Next.js App Router
-│   ├── (auth)/                 # Группа маршрутов: страницы входа и регистрации
-│   ├── api/                    # Серверные Route Handlers
-│   │   ├── auth/               # POST /api/auth/login, /register, /logout, /me
-│   │   ├── search/             # GET  /api/search?q=...
-│   │   ├── trending/           # GET  /api/trending
-│   │   ├── playlists/          # GET|POST|DELETE /api/playlists
-│   │   ├── library/            # GET|POST|DELETE /api/library (лайкнутые треки)
-│   │   ├── metadata/           # GET  /api/metadata?videoId=...
-│   │   ├── stats/              # GET  /api/stats (статистика для Vesper AI)
-│   │   ├── image/              # GET  /api/image (прокси обложек, обход CORS)
-│   │   └── discover/           # GET  /api/discover
-│   ├── discover/               # Страница «Открыть»
-│   ├── library/                # Личная библиотека
-│   ├── my-playlist/[id]/       # Пользовательский плейлист (динамический маршрут)
-│   ├── playlist/[id]/          # Публичный плейлист YouTube (динамический маршрут)
-│   ├── vesper/                 # Страница AI-компаньона Vesper (3D-сцена)
-│   ├── layout.tsx              # Корневой макет: сайдбар, плеер, провайдеры
-│   └── globals.css             # Глобальный CSS и дизайн-токены
-│
-├── components/
-│   ├── layout/
-│   │   ├── Sidebar.tsx         # Навигация, плейлисты, виджет аутентификации
-│   │   └── Header.tsx          # Шапка страницы
-│   ├── player/
-│   │   ├── GlobalAudioPlayer.tsx     # Постоянная мини-панель плеера (низ экрана)
-│   │   ├── FullScreenPlayer.tsx      # Полноэкранный оверлей с обложкой и управлением
-│   │   ├── HiddenYouTubePlayer.tsx   # Невидимый YouTube iframe (аудио-мост)
-│   │   ├── QueuePanel.tsx            # Панель очереди и истории
-│   │   └── SynchronizedLyrics.tsx    # Синхронизированные тексты песен
-│   ├── playlists/
-│   │   ├── PlaylistManager.tsx       # CRUD-интерфейс плейлистов
-│   │   └── AddToPlaylistPicker.tsx   # Модальное окно: добавить трек в плейлист
-│   ├── home/                   # Секции главной страницы
-│   ├── ui/                     # Примитивные компоненты (TrackRow, AuraTrackImage и др.)
-│   └── vesper/                 # 3D-компоненты AI-сцены
-│
-├── store/
-│   ├── usePlayerStore.ts       # Движок воспроизведения: очередь, трек, громкость, кроссфейд
-│   ├── useAuthStore.ts         # Сессия: объект пользователя, вход/выход, гидрация
-│   ├── useLibraryStore.ts      # Лайкнутые треки: оптимистичный UI + синхронизация с БД
-│   ├── usePlaylistsStore.ts    # CRUD плейлистов, управление треками
-│   └── useMetadataStore.ts     # Кэш обогащённых метаданных треков
-│
-├── lib/
-│   ├── youtube.ts              # Обёртка YouTube Data API v3 (только сервер)
-│   ├── lastfm.ts               # REST-обёртка Last.fm (только сервер)
-│   ├── metadata.ts             # Пайплайн обогащения метаданными
-│   ├── db.ts                   # Пул подключений PostgreSQL
-│   ├── auth.ts                 # JWT и управление куками
-│   ├── tokens.ts               # Подпись и верификация токенов
-│   ├── rateLimit.ts            # In-memory лимитер запросов по IP
-│   ├── migrate.ts              # Одноразовый скрипт миграции БД
-│   ├── utils.ts                # Утилиты: cn(), cleanTitle() и др.
-│   └── constants.ts            # Константы приложения
-│
-└── middleware.ts               # Защита маршрутов через JWT-куку
-```
-
----
-
-## Типы данных
-
-### Track — основной примитив данных
+## Core Data Types
 
 ```typescript
 // src/lib/youtube.ts
+
 export interface Track {
-    id: string;             // YouTube video ID
-    title: string;          // Заголовок (очищается через cleanTitle())
-    artist: string;         // Название канала / имя исполнителя
-    durationMs: number;     // Длительность в миллисекундах
-    albumImageUrl?: string; // Обложка от Last.fm или YouTube
+  id: string;            // YouTube video ID
+  title: string;         // Cleaned video title
+  artist: string;        // Channel title / artist name
+  durationMs: number;    // Duration in milliseconds
+  albumImageUrl?: string; // Last.fm or YouTube thumbnail
 }
-```
 
-### Playlist
-
-```typescript
 export interface Playlist {
-    id: string;
-    title: string;
-    description: string;
-    imageUrl: string;
-    tracks: Track[];
+  id: string;
+  title: string;
+  description: string;
+  imageUrl: string;
+  tracks: Track[];
 }
 
-export type Album = Playlist; // YouTube не имеет нативной концепции альбома
+export type Album = Playlist; // YouTube has no native album concept
 ```
 
 ---
 
-## API-маршруты
+<div align="center">
 
-| Метод | Маршрут | Авторизация | Описание |
-|---|---|---|---|
-| `POST` | `/api/auth/register` | Нет | Создать аккаунт |
-| `POST` | `/api/auth/login` | Нет | Выдать JWT-куку сессии |
-| `POST` | `/api/auth/logout` | Нет | Очистить куку сессии |
-| `GET` | `/api/auth/me` | Да | Вернуть текущего пользователя |
-| `GET` | `/api/search?q=` | Нет | Поиск треков через YouTube API |
-| `GET` | `/api/trending` | Нет | Трендовая музыка |
-| `GET` | `/api/discover` | Нет | Курируемые жанровые подборки |
-| `GET` | `/api/metadata?videoId=` | Нет | Обогащение трека метаданными Last.fm |
-| `GET` | `/api/library` | Да | Список лайкнутых треков |
-| `POST` | `/api/library` | Да | Поставить лайк треку |
-| `DELETE` | `/api/library?trackId=` | Да | Убрать лайк |
-| `GET` | `/api/playlists` | Да | Список плейлистов пользователя |
-| `POST` | `/api/playlists` | Да | Создать новый плейлист |
-| `GET` | `/api/playlists/[id]` | Да | Получить плейлист с треками |
-| `PATCH` | `/api/playlists/[id]` | Да | Переименовать плейлист |
-| `DELETE` | `/api/playlists/[id]` | Да | Удалить плейлист |
-| `POST` | `/api/playlists/[id]/tracks` | Да | Добавить трек в плейлист |
-| `DELETE` | `/api/playlists/[id]/tracks` | Да | Удалить трек из плейлиста |
-| `GET` | `/api/stats` | Да | История прослушивания и жанровая разбивка |
-| `GET` | `/api/image` | Нет | Прокси обложек (обход CORS) |
+<br />
 
----
+Built by **ataniyaz228** — [GitHub](https://github.com/ataniyaz228)
 
-## Управление состоянием
+<br />
 
-Всё клиентское состояние управляется через **Zustand**-хранилища. Каждое хранилище инкапсулирует свою логику персистентности и синхронизации:
-
-| Хранилище | Ответственность |
-|---|---|
-| `usePlayerStore` | Очередь, текущий трек, позиция, громкость, кроссфейд, режим повтора/шаффла |
-| `useAuthStore` | Авторизованный пользователь, действия входа/выхода, гидрация из куки |
-| `useLibraryStore` | Лайкнутые треки с оптимистичным UI и серверной синхронизацией |
-| `usePlaylistsStore` | CRUD пользовательских плейлистов, управление треками |
-| `useMetadataStore` | In-memory кэш обогащённых метаданных (чтобы не дублировать запросы) |
-
----
-
-## Ключевые возможности
-
-### Движок воспроизведения
-Аудио-пайплайн состоит из трёх уровней: **Zustand** хранит очередь и состояние воспроизведения — **HiddenYouTubePlayer** рендерит невидимый YouTube iframe через SDK `react-youtube` — **GlobalAudioPlayer** подписывается на состояние стора и отдаёт команды iframe через YouTube IFrame API. Такая архитектура сохраняет плеер живым при навигации между страницами без перемонтирования.
-
-### Полноэкранный плеер
-Оверлей (`FullScreenPlayer`) извлекает доминирующий цвет из текущей обложки через `fast-average-color` и строит динамический градиентный фон — каждый трек визуально уникален. Доступны: прогресс-бар, громкость, шаффл, повтор, очередь, синхронизированные тексты.
-
-### Синхронизированные тексты
-`SynchronizedLyrics` разбирает LRC-метки из ответа метаданных и автоматически прокручивает к активной строке на основе `currentTime` из стора плеера.
-
-### Vesper AI-компаньон
-Отдельная страница (`/vesper`) рендерит 3D-сцену на Three.js / React Three Fiber. Читает статистику прослушивания (топ жанров, последние треки) из `/api/stats` и генерирует персонализированные рекомендации.
-
-### Управление плейлистами
-Пользователи могут создавать, переименовывать и удалять плейлисты. Треки добавляются через:
-- Иконку `ListPlus` при наведении на `TrackRow`
-- Модальное окно `AddToPlaylistPicker` со списком всех плейлистов
-
-### Аутентификация
-Stateless JWT-аутентификация. Токен хранится в `httpOnly`-куке. Файл `middleware.ts` защищает серверно-рендеримые страницы. API-маршруты проверяют куку через хелпер `auth.ts` при каждом запросе.
-
-### Ограничение частоты запросов
-In-memory лимитер на основе token bucket (`rateLimit.ts`) применяется ко всем write-эндпоинтам без необходимости использовать Redis.
-
-### Ротация ключей YouTube API
-`youtube.ts` поддерживает до трёх ключей YouTube API (`YOUTUBE_API_KEY`, `YOUTUBE_API_KEY_2`, `YOUTUBE_API_KEY_3`). При обнаружении ошибки квоты на одном ключе клиент автоматически переключается на следующий.
-
----
-
-## Переменные окружения
-
-Создайте `.env.local` в корне проекта. Используйте `.env.example` как шаблон.
-
-| Переменная | Обязательно | Описание |
-|---|---|---|
-| `DATABASE_URL` | Да | Строка подключения PostgreSQL |
-| `JWT_SECRET` | Да | Строка минимум 32 символа для подписи токенов |
-| `JWT_EXPIRY` | Нет | Срок жизни токена (по умолчанию: `7d`) |
-| `YOUTUBE_API_KEY` | Да | Основной ключ YouTube Data API v3 |
-| `YOUTUBE_API_KEY_2` | Нет | Резервный ключ YouTube (ротация квоты) |
-| `YOUTUBE_API_KEY_3` | Нет | Второй резервный ключ YouTube |
-| `LASTFM_API_KEY` | Да | Ключ Last.fm API для обогащения метаданными |
-
-Генерация безопасного JWT-ключа:
-```bash
-openssl rand -base64 32
-```
-
----
-
-## Схема базы данных
-
-Скрипт миграции (`src/lib/migrate.ts`) идемпотентен и создаёт следующие таблицы:
-
-```sql
--- Зарегистрированные пользователи
-CREATE TABLE IF NOT EXISTS users (
-    id            SERIAL PRIMARY KEY,
-    username      VARCHAR(32)  UNIQUE NOT NULL,
-    email         VARCHAR(255) UNIQUE NOT NULL,
-    password_hash TEXT NOT NULL,
-    avatar_seed   TEXT DEFAULT '',
-    created_at    TIMESTAMPTZ DEFAULT NOW(),
-    updated_at    TIMESTAMPTZ DEFAULT NOW()
-);
-
--- Лайкнутые треки пользователя
-CREATE TABLE IF NOT EXISTS liked_tracks (
-    id              SERIAL PRIMARY KEY,
-    user_id         INTEGER REFERENCES users(id) ON DELETE CASCADE,
-    track_id        TEXT NOT NULL,
-    title           TEXT NOT NULL,
-    artist          TEXT NOT NULL,
-    album_image_url TEXT,
-    duration_ms     INTEGER DEFAULT 0,
-    created_at      TIMESTAMPTZ DEFAULT NOW(),
-    UNIQUE(user_id, track_id)
-);
-
--- Пользовательские плейлисты
-CREATE TABLE IF NOT EXISTS saved_playlists (
-    id          SERIAL PRIMARY KEY,
-    user_id     INTEGER REFERENCES users(id) ON DELETE CASCADE,
-    playlist_id TEXT NOT NULL,
-    title       TEXT NOT NULL,
-    description TEXT,
-    image_url   TEXT,
-    created_at  TIMESTAMPTZ DEFAULT NOW(),
-    UNIQUE(user_id, playlist_id)
-);
-
--- Полная история прослушивания (для статистики и AI-рекомендаций)
-CREATE TABLE IF NOT EXISTS listening_history (
-    id              SERIAL PRIMARY KEY,
-    user_id         INTEGER REFERENCES users(id) ON DELETE CASCADE,
-    track_id        TEXT NOT NULL,
-    title           TEXT NOT NULL,
-    artist          TEXT NOT NULL,
-    album_image_url TEXT,
-    duration_ms     INTEGER,
-    genre           TEXT DEFAULT 'Unknown',
-    listened_at     TIMESTAMPTZ DEFAULT NOW()
-);
-```
-
----
-
-## Запуск проекта
-
-### Требования
-
-- Node.js 20+
-- PostgreSQL 14+
-- Проект в Google Cloud с включённым YouTube Data API v3
-- Аккаунт Last.fm API
-
-### Установка
-
-```bash
-# 1. Клонировать репозиторий
-git clone <repository-url>
-cd vesper
-
-# 2. Установить зависимости
-npm install
-
-# 3. Настроить окружение
-cp .env.example .env.local
-# Заполнить все обязательные значения в .env.local
-
-# 4. Запустить миграцию базы данных
-npm run db:migrate
-
-# 5. Запустить сервер разработки
-npm run dev
-```
-
-Приложение будет доступно по адресу `http://localhost:3000`.
-
----
-
-## Скрипты
-
-| Скрипт | Команда | Описание |
-|---|---|---|
-| Сервер разработки | `npm run dev` | Запускает Next.js с hot reload |
-| Сборка для продакшна | `npm run build` | Компилирует и оптимизирует проект |
-| Продакшн-сервер | `npm run start` | Запускает скомпилированную сборку |
-| Линтинг | `npm run lint` | Запускает ESLint по всему проекту |
-| Миграция БД | `npm run db:migrate` | Создаёт или обновляет схему PostgreSQL |
+</div>
