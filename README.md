@@ -42,7 +42,6 @@
 ## Table of Contents
 
 - [Overview](#overview)
-- [Screenshots](#screenshots)
 - [Tech Stack](#tech-stack)
 - [Architecture](#architecture)
 - [Project Structure](#project-structure)
@@ -62,50 +61,6 @@ Vesper uses YouTube's publicly available video catalog as its audio backend and 
 
 All data-sensitive operations (search, metadata enrichment, authentication) run exclusively server-side via Next.js Route Handlers. The UI is a fully client-side React application with Zustand-powered reactive state. The hidden YouTube iframe stays alive across page navigations with zero re-mounts, making track transitions seamless.
 
----
-
-## Screenshots
-
-<br />
-
-<table>
-  <tr>
-    <td align="center" width="50%">
-      <img src=".github/assets/screenshot-home.png" alt="Home — Trending & Shelves" />
-      <br /><sub><b>Home — Trending & Shelves</b></sub>
-    </td>
-    <td align="center" width="50%">
-      <img src=".github/assets/screenshot-player.png" alt="Full-Screen Player" />
-      <br /><sub><b>Full-Screen Player with Ambient Color</b></sub>
-    </td>
-  </tr>
-  <tr>
-    <td align="center" width="50%">
-      <img src=".github/assets/screenshot-lyrics.png" alt="Synchronized Lyrics" />
-      <br /><sub><b>Synchronized Lyrics (LRC)</b></sub>
-    </td>
-    <td align="center" width="50%">
-      <img src=".github/assets/screenshot-vesper.png" alt="Vesper AI Companion" />
-      <br /><sub><b>Vesper AI — 3D Companion Scene</b></sub>
-    </td>
-  </tr>
-  <tr>
-    <td align="center" width="50%">
-      <img src=".github/assets/screenshot-library.png" alt="Personal Library" />
-      <br /><sub><b>Personal Library & Liked Tracks</b></sub>
-    </td>
-    <td align="center" width="50%">
-      <img src=".github/assets/screenshot-discover.png" alt="Discover" />
-      <br /><sub><b>Discover — Genre & Mood Radio</b></sub>
-    </td>
-  </tr>
-</table>
-
-<br />
-
-> **Note:** Place your screenshots in `.github/assets/` to populate the grid above.
-
----
 
 ## Tech Stack
 
